@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  height: 100%;
+}
+
+/* Smooth color transition when the dark-mode toggle flips the class on
+   <html>, rather than an abrupt flash. */
+body {
+  transition: background-color 150ms ease, color 150ms ease;
+}
