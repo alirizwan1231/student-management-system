@@ -75,10 +75,10 @@ export function SubjectsWidget({
 
                 <div className="mt-3 flex items-center gap-3">
                   <Link
-                    href={`/subjects/${subject.id}`}
+                    href={`/notes/subject/${subject.id}`}
                     className="text-[11px] font-semibold text-brand-600 hover:underline dark:text-brand-400"
                   >
-                    Lectures
+                    Notes
                   </Link>
                   <Link
                     href={`/subjects/${subject.id}/tasks`}

@@ -5,6 +5,7 @@ import { useSubjects } from "@/hooks/useSubjects";
 import { deleteSubject } from "@/lib/db/repo/subjects";
 import { useUser } from "@/hooks/useUser";
 import { SubjectForm } from "./SubjectForm";
+import { EditSubjectModal } from "./EditSubjectModal";
 
 export function SubjectList({ semesterId }: { semesterId: string }) {
   const { user } = useUser();
@@ -29,12 +30,12 @@ export function SubjectList({ semesterId }: { semesterId: string }) {
               <Link href={`/subjects/${s.id}`} className="font-medium text-slate-800 hover:underline dark:text-slate-100">
                 {s.name} {s.code && <span className="text-slate-400 dark:text-slate-500">({s.code})</span>}
               </Link>
-              <button
-                onClick={() => deleteSubject(s.id)}
-                className="text-xs font-medium text-status-overdue hover:underline"
-              >
-                Delete
-              </button>
+              <div className="flex items-center gap-3">
+                <EditSubjectModal userId={user.id} subject={s} />
+                <button onClick={() => deleteSubject(s.id)} className="text-xs font-medium text-status-overdue hover:underline">
+                  Delete
+                </button>
+              </div>
             </div>
             {s.lecturer_name && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{s.lecturer_name}</p>}
           </li>

@@ -6,6 +6,7 @@ import type { Resource, ResourceType } from "@/types/academic";
 export interface CreateResourceInput {
   subject_id?: string | null;
   lecture_id?: string | null;
+  task_id?: string | null;
   title: string;
   url?: string | null;
   resource_type: ResourceType;
@@ -18,6 +19,7 @@ export async function createResource(userId: string, input: CreateResourceInput)
     user_id: userId,
     subject_id: input.subject_id ?? null,
     lecture_id: input.lecture_id ?? null,
+    task_id: input.task_id ?? null,
     title: input.title,
     url: input.url ?? null,
     storage_path: null,
@@ -56,6 +58,13 @@ export function listResourcesForSubject(subjectId: string) {
 export function listResourcesForLecture(lectureId: string) {
   return db.resources
     .where({ lecture_id: lectureId })
+    .filter((r) => r.deleted_at === null)
+    .toArray();
+}
+
+export function listResourcesForTask(taskId: string) {
+  return db.resources
+    .where({ task_id: taskId })
     .filter((r) => r.deleted_at === null)
     .toArray();
 }

@@ -1,11 +1,5 @@
 // Dexie (IndexedDB) database -- the UI's local source of truth.
 //
-// The full schema is declared here, once, even though some tables (e.g.
-// pendingUploads, syncQueue) aren't used by UI until later batches. Doing it
-// this way means we never need a second Dexie .version() migration just to
-// add a table later -- every later batch only adds repo functions and
-// components that read/write tables that already exist here.
-//
 // Table key syntax reminder: the first field listed is the primary key.
 // Fields after it are indexed for .where()/.orderBy() queries.
 
@@ -16,6 +10,7 @@ import type {
   Lecture,
   AcademicTask,
   Resource,
+  Lecturer,
   SyncQueueEntry,
 } from "@/types/academic";
 
@@ -47,6 +42,7 @@ export class UniversityManagerDB extends Dexie {
   lectures!: Table<Lecture, string>;
   tasks!: Table<AcademicTask, string>;
   resources!: Table<Resource, string>;
+  lecturers!: Table<Lecturer, string>;
   pendingUploads!: Table<PendingUpload, string>;
   syncQueue!: Table<SyncQueueEntry, string>;
   meta!: Table<MetaEntry, string>;
@@ -60,6 +56,22 @@ export class UniversityManagerDB extends Dexie {
       lectures: "id, user_id, subject_id, lecture_date, deleted_at, updated_at",
       tasks: "id, user_id, subject_id, deadline, status, deleted_at, updated_at",
       resources: "id, user_id, subject_id, lecture_id, deleted_at, updated_at",
+      pendingUploads: "id, resource_id, status",
+      syncQueue: "id, table_name, record_id, status, client_updated_at",
+      meta: "key",
+    });
+
+    // v2: instructors as a real entity, plus the indexes needed to query
+    // subjects by instructor and resources by task (both power the new
+    // cross-linked Instructor / Task detail pages). Purely additive --
+    // existing rows keep working, new fields are just undefined until set.
+    this.version(2).stores({
+      semesters: "id, user_id, is_active, deleted_at, updated_at",
+      subjects: "id, user_id, semester_id, lecturer_id, deleted_at, updated_at",
+      lectures: "id, user_id, subject_id, lecture_date, deleted_at, updated_at",
+      tasks: "id, user_id, subject_id, deadline, status, deleted_at, updated_at",
+      resources: "id, user_id, subject_id, lecture_id, task_id, deleted_at, updated_at",
+      lecturers: "id, user_id, deleted_at, updated_at",
       pendingUploads: "id, resource_id, status",
       syncQueue: "id, table_name, record_id, status, client_updated_at",
       meta: "key",

@@ -36,6 +36,10 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   return task;
 }
 
+export function getTask(id: string) {
+  return db.tasks.get(id);
+}
+
 export async function updateTask(id: string, changes: Partial<AcademicTask>) {
   const updated_at = nowIso();
   await db.tasks.update(id, { ...changes, updated_at });

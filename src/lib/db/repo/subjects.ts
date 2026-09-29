@@ -8,6 +8,7 @@ export interface CreateSubjectInput {
   name: string;
   code?: string | null;
   lecturer_name?: string | null;
+  lecturer_id?: string | null;
   description?: string | null;
   credit_hours?: number | null;
   color?: string | null;
@@ -22,6 +23,7 @@ export async function createSubject(userId: string, input: CreateSubjectInput) {
     name: input.name,
     code: input.code ?? null,
     lecturer_name: input.lecturer_name ?? null,
+    lecturer_id: input.lecturer_id ?? null,
     description: input.description ?? null,
     credit_hours: input.credit_hours ?? null,
     color: input.color ?? "#3366ff",
@@ -59,6 +61,13 @@ export function listSubjectsForSemester(semesterId: string) {
 export function listAllSubjectsForUser(userId: string) {
   return db.subjects
     .where({ user_id: userId })
+    .filter((s) => s.deleted_at === null)
+    .toArray();
+}
+
+export function listSubjectsForLecturer(lecturerId: string) {
+  return db.subjects
+    .where({ lecturer_id: lecturerId })
     .filter((s) => s.deleted_at === null)
     .toArray();
 }

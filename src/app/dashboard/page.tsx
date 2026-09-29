@@ -6,14 +6,14 @@ import { useUser } from "@/hooks/useUser";
 import { useDashboard } from "@/hooks/useDashboard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { WeeklyActivityChart } from "@/components/dashboard/WeeklyActivityChart";
-import { TodayLectures } from "@/components/dashboard/TodayLectures";
+import { RecentNotes } from "@/components/dashboard/RecentNotes";
 import { AssignmentBreakdown } from "@/components/dashboard/AssignmentBreakdown";
 import { SubjectsWidget } from "@/components/dashboard/SubjectsWidget";
 import { UpcomingTasksTable } from "@/components/dashboard/UpcomingTasksTable";
 import { OverdueTasks } from "@/components/dashboard/OverdueTasks";
 import { AddTaskModal } from "@/components/tasks/AddTaskModal";
 import { AddSubjectModal } from "@/components/subjects/AddSubjectModal";
-import { AddLectureModal } from "@/components/lectures/AddLectureModal";
+import { AddNotesButton } from "@/components/notes/AddNotesButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 function greeting() {
@@ -36,7 +36,7 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-3xl p-4 sm:p-6">
         <EmptyState
           title="Set up your first semester"
-          description="Everything — subjects, lectures, tasks — lives inside a semester. Create one to get started."
+          description="Everything — subjects, notes, tasks — lives inside a semester. Create one to get started."
           action={
             <Link href="/semesters" className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
               Create a semester
@@ -60,7 +60,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <AddSubjectModal userId={user.id} />
-          <AddLectureModal userId={user.id} />
+          <AddNotesButton />
           <AddTaskModal userId={user.id} />
         </div>
       </header>
@@ -73,7 +73,7 @@ export default function DashboardPage() {
           icon={CalendarClock}
           tone="progress"
           href="/calendar"
-          linkLabel="View schedule"
+          linkLabel="View deadlines"
         />
         <StatCard
           label="Completed"
@@ -96,7 +96,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <WeeklyActivityChart data={data.weeklyActivity} />
         </div>
-        <TodayLectures lectures={data.todaysLectures} />
+        <RecentNotes userId={user.id} />
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils/cn";
 import { useUser } from "@/hooks/useUser";
 import { AddTaskModal } from "@/components/tasks/AddTaskModal";
 import { AddSubjectModal } from "@/components/subjects/AddSubjectModal";
-import { AddLectureModal } from "@/components/lectures/AddLectureModal";
+import { AddNotesButton } from "@/components/notes/AddNotesButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { SyncStatusIndicator } from "@/components/sync/SyncStatusIndicator";
 
@@ -27,7 +27,7 @@ export function Sidebar() {
       {user && (
         <div className="mb-4 flex flex-col gap-2 px-2">
           <AddTaskModal userId={user.id} fullWidth />
-          <AddLectureModal userId={user.id} fullWidth />
+          <AddNotesButton fullWidth />
           <AddSubjectModal userId={user.id} fullWidth />
         </div>
       )}

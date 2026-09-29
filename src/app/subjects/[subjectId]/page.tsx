@@ -1,5 +1,5 @@
-import { LectureList } from "@/components/lectures/LectureList";
+import { SubjectNotesList } from "@/components/notes/SubjectNotesList";
 
-export default function SubjectDetailPage({ params }: { params: { subjectId: string } }) {
-  return <LectureList subjectId={params.subjectId} />;
+export default function SubjectNotesTabPage({ params }: { params: { subjectId: string } }) {
+  return <SubjectNotesList subjectId={params.subjectId} embedded />;
 }

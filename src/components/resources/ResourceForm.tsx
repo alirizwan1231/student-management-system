@@ -8,18 +8,20 @@ import { createResource } from "@/lib/db/repo/resources";
 import { queueFileUpload } from "@/lib/db/repo/pendingUploads";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
+  "rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 const labelClass = "mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400";
 
 export function ResourceForm({
   userId,
   subjectId,
   lectureId,
+  taskId,
   onCreated,
 }: {
   userId: string;
   subjectId?: string;
   lectureId?: string;
+  taskId?: string;
   onCreated?: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
@@ -37,6 +39,7 @@ export function ResourceForm({
     const resource = await createResource(userId, {
       subject_id: subjectId ?? null,
       lecture_id: lectureId ?? null,
+      task_id: taskId ?? null,
       title: values.title,
       url: values.url || null,
       resource_type: values.resource_type,

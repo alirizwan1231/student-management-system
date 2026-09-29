@@ -3,17 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSubject } from "@/hooks/useSubjects";
+import { useLecturer } from "@/hooks/useLecturers";
 import { cn } from "@/lib/utils/cn";
 
-// This is the fix for "there's no way to add a task/resource" -- those
-// pages existed as routes since batches 06/07 but nothing linked to them.
-// Every /subjects/[subjectId]/* route now renders inside this tab bar.
+// Every /subjects/[subjectId]/* route renders inside this tab bar.
 export function SubjectTabs({ subjectId }: { subjectId: string }) {
   const subject = useSubject(subjectId);
+  const lecturer = useLecturer(subject?.lecturer_id ?? undefined);
   const pathname = usePathname();
 
   const tabs = [
-    { href: `/subjects/${subjectId}`, label: "Lectures" },
+    { href: `/subjects/${subjectId}`, label: "Notes" },
     { href: `/subjects/${subjectId}/tasks`, label: "Tasks" },
     { href: `/subjects/${subjectId}/resources`, label: "Resources" },
   ];
@@ -34,6 +34,21 @@ export function SubjectTabs({ subjectId }: { subjectId: string }) {
           </span>
         )}
       </div>
+      {(lecturer || subject?.lecturer_name) && (
+        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          Taught by{" "}
+          {lecturer ? (
+            <Link
+              href={`/instructors/${lecturer.id}`}
+              className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+            >
+              {lecturer.name}
+            </Link>
+          ) : (
+            <span className="font-medium text-slate-700 dark:text-slate-200">{subject?.lecturer_name}</span>
+          )}
+        </p>
+      )}
       <nav className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
         {tabs.map((tab) => {
           const active = pathname === tab.href;

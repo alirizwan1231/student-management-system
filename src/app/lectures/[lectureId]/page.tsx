@@ -1,9 +1,5 @@
-import { LectureDetail } from "@/components/lectures/LectureDetail";
+import { redirect } from "next/navigation";
 
-export default function LecturePage({ params }: { params: { lectureId: string } }) {
-  return (
-    <main className="mx-auto max-w-3xl p-6">
-      <LectureDetail lectureId={params.lectureId} />
-    </main>
-  );
+export default function LegacyLecturePage({ params }: { params: { lectureId: string } }) {
+  redirect(`/notes/lecture/${params.lectureId}`);
 }

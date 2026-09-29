@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { setTaskStatus, deleteTask } from "@/lib/db/repo/tasks";
 import { TaskStatusBadge } from "./TaskStatusBadge";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
@@ -208,15 +209,17 @@ export function TaskList({
             <div className="pl-3">
               {/* Top Row — title + description + badges (right pad for delete btn) */}
               <div className="pr-8 sm:pr-10">
-                <h3
-                  className={`text-sm font-bold leading-5 ${
-                    task.status === "completed"
-                      ? "text-slate-400 line-through dark:text-slate-500"
-                      : "text-slate-900 dark:text-white"
-                  }`}
-                >
-                  {task.title}
-                </h3>
+                <Link href={`/tasks/${task.id}`}>
+                  <h3
+                    className={`text-sm font-bold leading-5 transition-colors hover:text-brand-600 dark:hover:text-brand-400 ${
+                      task.status === "completed"
+                        ? "text-slate-400 line-through dark:text-slate-500"
+                        : "text-slate-900 dark:text-white"
+                    }`}
+                  >
+                    {task.title}
+                  </h3>
+                </Link>
 
                 {task.description && (
                   <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">

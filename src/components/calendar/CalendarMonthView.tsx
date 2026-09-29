@@ -283,23 +283,17 @@ export function CalendarMonthView({
         {/* ─────────────── Footer ─────────────── */}
         <footer className="flex shrink-0 items-center justify-between border-t border-slate-100 px-4 py-3 dark:border-white/[0.07] sm:px-6">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-brand-500" />
-              <span className="text-[10px] font-medium text-slate-500 sm:text-xs dark:text-slate-400">
-                Lecture
-              </span>
-            </div>
 
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
               <span className="text-[10px] font-medium text-slate-500 sm:text-xs dark:text-slate-400">
-                Event
+                Task deadline
               </span>
             </div>
           </div>
 
           <span className="text-[10px] font-medium text-slate-400 sm:text-xs dark:text-slate-500">
-            {events.length} {events.length === 1 ? "event" : "events"}
+            {events.length} {events.length === 1 ? "deadline" : "deadlines"}
           </span>
         </footer>
       </div>
