@@ -197,8 +197,7 @@ function CompactSelect({
   );
 }
 
-function CustomDateTimePicker({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false);
+function CustomDateTimePicker({ value, onChange }: { value?: string | null; onChange: (v: string) => void }) {  const [open, setOpen] = useState(false);
   const [placement, setPlacement] = useState<"bottom" | "top">("bottom");
   const wrapperRef = useRef<HTMLDivElement>(null);
 

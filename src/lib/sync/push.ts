@@ -43,8 +43,14 @@ export async function pushPendingChanges(): Promise<PushResult> {
   return { pushed, failed };
 }
 
-async function pushOne(supabase: ReturnType<typeof createClient>, entry: SyncQueueEntry) {
-  const table = supabase.from(entry.table_name);
+async function pushOne(
+  supabase: ReturnType<typeof createClient>,
+  entry: SyncQueueEntry
+) {
+  // entry.table_name is a runtime string; Supabase's generic builder can't
+  // narrow it, so we cast to a permissive builder here. RLS on the server
+  // still scopes every call to the caller's own rows.
+  const table = supabase.from(entry.table_name as never) as any;
 
   if (entry.operation === "delete") {
     const payload = entry.payload as { deleted_at: string; updated_at: string };
@@ -57,6 +63,9 @@ async function pushOne(supabase: ReturnType<typeof createClient>, entry: SyncQue
 
   // create + update both become an upsert -- simplest way to make retries
   // idempotent (a create retried after a flaky response just upserts again).
-  const { error } = await table.upsert(entry.payload as Record<string, unknown>, { onConflict: "id" });
+  const { error } = await table.upsert(
+    entry.payload as Record<string, unknown>,
+    { onConflict: "id" }
+  );
   if (error) throw error;
 }

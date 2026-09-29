@@ -36,12 +36,11 @@ export function ProfileForm() {
 
     const supabase = createClient();
 
-    supabase
-      .from("profiles")
+    (supabase.from("profiles") as any)
       .select("full_name")
       .eq("id", user.id)
       .single()
-      .then(({ data }) => {
+      .then(({ data }: { data: { full_name: string | null } | null }) => {
         reset({
           full_name: data?.full_name ?? "",
         });
@@ -57,8 +56,7 @@ export function ProfileForm() {
 
     const supabase = createClient();
 
-    await supabase
-      .from("profiles")
+    await (supabase.from("profiles") as any)
       .update({
         full_name: values.full_name,
       })

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { setTaskStatus, deleteTask } from "@/lib/db/repo/tasks";
 import { TaskStatusBadge } from "./TaskStatusBadge";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
+import type { TaskStatus, TaskPriority } from "@/types/academic";
 
 function isOverdue(deadline?: string | null) {
   if (!deadline) return false;
@@ -14,14 +15,14 @@ function isOverdue(deadline?: string | null) {
 type Task = {
   id: string;
   title: string;
-  status: string;
-  priority: string;
+  status: TaskStatus;
+  priority: TaskPriority;
   deadline?: string | null;
   task_type?: string | null;
   description?: string | null;
 };
 
-const statusOptions = [
+const statusOptions: { value: TaskStatus; label: string; dot: string }[] = [
   { value: "pending", label: "Pending", dot: "bg-slate-400" },
   { value: "in_progress", label: "In Progress", dot: "bg-blue-500" },
   { value: "completed", label: "Completed", dot: "bg-emerald-500" },
@@ -31,8 +32,8 @@ function StatusDropdown({
   value,
   onChange,
 }: {
-  value: string;
-  onChange: (value: string) => void;
+  value: TaskStatus;
+  onChange: (value: TaskStatus) => void;
 }) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -165,7 +166,9 @@ export function TaskList({
             ? isOverdue(task.deadline)
             : false;
 
-        const effectiveStatus = overdue ? "overdue" : task.status;
+        const effectiveStatus: TaskStatus | "overdue" = overdue
+          ? "overdue"
+          : task.status;
 
         return (
           <div
@@ -228,7 +231,7 @@ export function TaskList({
                 )}
 
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                  <TaskStatusBadge status={effectiveStatus} />
+                  <TaskStatusBadge status={effectiveStatus as TaskStatus} />
                   <TaskPriorityBadge priority={task.priority} />
                   {task.task_type && (
                     <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold capitalize text-slate-500 dark:bg-white/[0.05] dark:text-slate-400">

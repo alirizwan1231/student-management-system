@@ -51,7 +51,7 @@ function CustomDatePicker({
   onChange,
   placeholder,
 }: {
-  value?: string;
+  value?: string | null;
   onChange: (value: string) => void;
   placeholder: string;
 }) {
