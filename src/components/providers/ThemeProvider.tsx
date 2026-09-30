@@ -10,20 +10,25 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: "light",
+  theme: "dark",
   toggleTheme: () => {},
 });
 
 const STORAGE_KEY = "um-theme";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  // Default = dark. Agar user ne pehle kuch choose kiya hai to wo use hoga.
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const preferred: Theme = stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    setTheme(preferred);
-    document.documentElement.classList.toggle("dark", preferred === "dark");
+
+    // Sirf tab dark use karo jab user ne explicitly light choose na kiya ho.
+    // Pehle system preference check karte the — ab default dark hai.
+    const initial: Theme = stored ?? "dark";
+
+    setTheme(initial);
+    document.documentElement.classList.toggle("dark", initial === "dark");
   }, []);
 
   const toggleTheme = () => {
@@ -35,7 +40,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {

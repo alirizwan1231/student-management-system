@@ -11,3 +11,10 @@ html, body {
 body {
   transition: background-color 150ms ease, color 150ms ease;
 }
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}

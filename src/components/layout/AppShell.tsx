@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
 import { Topbar } from "./Topbar";
+import { WhatsAppButton } from "@/components/feedback/WhatsAppButton";
 
 const CHROME_LESS_PATHS = ["/login", "/signup", "/auth/callback", "/"];
 
@@ -23,6 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex-1">{children}</div>
       </div>
       <MobileNav />
+      <WhatsAppButton />
     </div>
   );
 }
