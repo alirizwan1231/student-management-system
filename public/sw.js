@@ -6,7 +6,7 @@
  *    then to /offline.html
  *  - /api/*, /auth/* and other origins (Supabase, R2) are never touched
  */
-const VERSION = "um-v3";
+const VERSION = "um-v4";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const PRECACHE = ["/offline.html", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
@@ -30,18 +30,37 @@ self.addEventListener("message", (event) => {
     // Called on sign-out so cached pages never outlive the session.
     event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k.endsWith("-pages")).map((k) => caches.delete(k)))));
   }
-  if (data.type === "WARM" && Array.isArray(data.urls)) {
-    // Pre-fetch the main screens once after login so they open offline.
+   if (data.type === "WARM" && Array.isArray(data.urls)) {
+    // Pre-fetch the main screens once after login AND the scripts/styles each
+    // page needs, so the pages become interactive offline, not just visible.
     event.waitUntil(
-      caches.open(PAGE_CACHE).then((cache) =>
-        Promise.all(
-          data.urls.map((url) =>
-            fetch(url, { credentials: "include" })
-              .then((res) => (res.ok && !res.redirected ? cache.put(url, res) : undefined))
-              .catch(() => undefined)
-          )
-        )
-      )
+      (async () => {
+        const pages = await caches.open(PAGE_CACHE);
+        const statics = await caches.open(STATIC_CACHE);
+        const assets = new Set();
+        for (const url of data.urls) {
+          try {
+            const res = await fetch(url, { credentials: "include" });
+            if (!res.ok || res.redirected) continue;
+            const html = await res.clone().text();
+            await pages.put(url, res);
+            for (const m of html.match(/\/_next\/static\/[^"'\\\s)<>]+/g) || []) assets.add(m);
+          } catch {
+            /* ignore one page */
+          }
+        }
+        await Promise.all(
+          [...assets].map(async (asset) => {
+            try {
+              if (await statics.match(asset)) return;
+              const r = await fetch(asset);
+              if (r.ok) await statics.put(asset, r);
+            } catch {
+              /* ignore one asset */
+            }
+          })
+        );
+      })()
     );
   }
 });

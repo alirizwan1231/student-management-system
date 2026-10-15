@@ -1,5 +1,5 @@
 "use client";
-
+  import { clearCachedUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -11,6 +11,7 @@ export function SignOutButton() {
     await supabase.auth.signOut();
     const { db } = await import("@/lib/db");
     await db.delete();
+      clearCachedUser();
     navigator.serviceWorker?.controller?.postMessage({ type: "CLEAR_CACHES" });
     router.replace("/login");
     router.refresh();

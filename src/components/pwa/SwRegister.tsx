@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const WARM_URLS = ["/dashboard", "/tasks", "/notes", "/semesters", "/timetable", "/calendar", "/attendance", "/exams", "/groups", "/settings"];
+const WARM_URLS = ["/dashboard", "/tasks", "/notes", "/semesters", "/timetable", "/calendar", "/attendance", "/exams", "/groups", "/settings" ,"/grades" , "/instructors"];
 const PUBLIC_PATHS = ["/", "/login", "/signup", "/forgot-password", "/reset-password"];
 
 // Registers the service worker (production only) and, once per browser

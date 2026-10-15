@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Download, ShieldAlert } from "lucide-react";
 import { db } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
-import { useUser } from "@/hooks/useUser";
+import { clearCachedUser, useUser } from "@/hooks/useUser";
 import { errorBoxClass, inputClass } from "@/components/auth/authStyles";
 
 const EXPORT_TABLES = ["semesters", "subjects", "lecturers", "lectures", "tasks", "resources", "timetableSlots", "timetableExceptions", "attendanceRecords", "exams"] as const;
@@ -48,6 +48,7 @@ export function AccountDataSection() {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(data.error || "Could not delete your account.");
       await db.delete().catch(() => undefined);
+        clearCachedUser();
       navigator.serviceWorker?.controller?.postMessage({ type: "CLEAR_CACHES" });
       await createClient().auth.signOut().catch(() => undefined);
       window.location.href = "/login";
