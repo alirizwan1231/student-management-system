@@ -11,3 +11,8 @@ html, body {
 body {
   transition: background-color 150ms ease, color 150ms ease;
 }
+/* Self-hosted fonts (fontsource) - no Google Fonts request at build time, works offline */
+:root {
+  --font-body: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Plus Jakarta Sans Variable", "Inter Variable", system-ui, sans-serif;
+}
