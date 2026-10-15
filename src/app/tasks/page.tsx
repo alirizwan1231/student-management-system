@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { useAllTasks } from "@/hooks/useTasks";
@@ -16,7 +16,7 @@ const FILTERS = [
   { key: "pending", label: "Pending" },
   { key: "high", label: "High Priority" },
 ];
-export default function AllTasksPage() {
+function AllTasks()  {
   const { user } = useUser();
   const tasks = useAllTasks(user?.id);
   const searchParams = useSearchParams();
@@ -66,5 +66,13 @@ export default function AllTasksPage() {
       </div>
       <TaskList tasks={filtered} />
     </main>
+  );
+}
+// useSearchParams() must sit inside a Suspense boundary for the production build.
+export default function AllTasksPage() {
+  return (
+    <Suspense fallback={null}>
+      <AllTasks />
+    </Suspense>
   );
 }
