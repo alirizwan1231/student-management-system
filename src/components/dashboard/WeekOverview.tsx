@@ -11,21 +11,39 @@ export function WeekOverview({ days, subjectNames }: { days: DayPlan[]; subjectN
             key={day.date}
             className={cn(
               "rounded-xl border p-2.5",
-              day.isToday ? "border-brand-400 bg-brand-50 dark:border-brand-600 dark:bg-brand-950/30" : "border-slate-100 dark:border-white/[0.06]"
+              day.isToday
+                ? "border-brand-400 bg-brand-50 ring-1 ring-brand-300/60 dark:border-brand-400/60 dark:bg-brand-500/20 dark:ring-brand-400/30"
+                : "border-slate-100 dark:border-white/[0.06]"
             )}
           >
-            <p className="mb-1.5 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500">{day.label}</p>
+            <p
+              className={cn(
+                "mb-1.5 text-[10px] font-bold uppercase",
+                day.isToday ? "text-brand-700 dark:text-brand-200" : "text-slate-400 dark:text-slate-500"
+              )}
+            >
+              {day.label}
+              {day.isToday ? " \u2022 Today" : ""}
+            </p>
             {day.occurrences.length === 0 && day.tasks.length === 0 ? (
-              <p className="text-[11px] text-slate-300 dark:text-slate-700">No items</p>
+              <p className="text-[11px] text-slate-300 dark:text-slate-600">No items</p>
             ) : (
               <div className="space-y-1">
                 {day.occurrences.map((o) => (
-                  <Link key={o.id} href={`/subjects/${o.subjectId}`} className="block truncate rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-medium text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+                  <Link
+                    key={o.id}
+                    href={`/subjects/${o.subjectId}`}
+                    className="block truncate rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-medium text-brand-700 dark:bg-brand-500/30 dark:text-brand-100"
+                  >
                     {subjectNames[o.subjectId] ?? "Class"}
                   </Link>
                 ))}
                 {day.tasks.map((t) => (
-                  <Link key={t.id} href={`/tasks/${t.id}`} className="block truncate rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  <Link
+                    key={t.id}
+                    href={`/tasks/${t.id}`}
+                    className="block truncate rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-500/25 dark:text-amber-100"
+                  >
                     {t.title}
                   </Link>
                 ))}

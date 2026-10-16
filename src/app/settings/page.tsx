@@ -1,5 +1,5 @@
 "use client";
-
+import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
 import { useSyncStatus } from "@/lib/sync/context";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { AccountDataSection } from "@/components/settings/AccountDataSection";
@@ -158,6 +158,7 @@ export default function SettingsPage() {
             <SignOutButton />
           </div>
         </section>
+        <ChangePasswordSection />
         <RemindersSection />
         <AccountDataSection />
       </div>

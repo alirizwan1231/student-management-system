@@ -8,13 +8,13 @@ import { NAV_ITEMS } from "./nav-items";
 import { cn } from "@/lib/utils/cn";
 
 // Four main tabs fit comfortably on a phone; everything else lives in "More".
-const PRIMARY = ["/dashboard", "/tasks", "/timetable", "/attendance"];
+   const PRIMARY = ["/dashboard", "/tasks", "/timetable", "/notes"];
 
 export function MobileNav() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
-  const primary = NAV_ITEMS.filter((i) => PRIMARY.includes(i.href));
-  const secondary = NAV_ITEMS.filter((i) => !PRIMARY.includes(i.href));
+   // Keep the bar in the order listed in PRIMARY (not the order of NAV_ITEMS).
+   const primary = PRIMARY.flatMap((href) => NAV_ITEMS.filter((i) => i.href === href));  const secondary = NAV_ITEMS.filter((i) => !PRIMARY.includes(i.href));
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
   const moreActive = secondary.some((i) => isActive(i.href));
 

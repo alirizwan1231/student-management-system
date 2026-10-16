@@ -1,4 +1,5 @@
 "use client";
+import { InstructorPicker } from "@/components/subjects/InstructorPicker";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { subjectSchema, type SubjectInput } from "@/lib/validation/subject";
@@ -6,10 +7,13 @@ import { createSubject, updateSubject } from "@/lib/db/repo/subjects";
 import { findOrCreateLecturer } from "@/lib/db/repo/lecturers";
 import { useSemesters } from "@/hooks/useSemesters";
 import type { Subject } from "@/types/academic";
+
 type FormValues = SubjectInput & { semester_id?: string };
+
 const inputClass =
   "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 const labelClass = "mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400";
+
 export function SubjectForm({
   userId,
   semesterId,
@@ -24,10 +28,13 @@ export function SubjectForm({
   const isEdit = !!subject;
   const showSemesterPicker = !semesterId && !isEdit;
   const semesters = useSemesters(showSemesterPicker ? userId : undefined);
+
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(subjectSchema),
@@ -38,6 +45,7 @@ export function SubjectForm({
       credit_hours: subject?.credit_hours ?? undefined,
     },
   });
+
   const onSubmit = async (values: FormValues) => {
     const lecturer = values.lecturer_name ? await findOrCreateLecturer(userId, values.lecturer_name) : null;
     if (isEdit && subject) {
@@ -59,6 +67,7 @@ export function SubjectForm({
     }
     onCreated?.();
   };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
@@ -86,10 +95,12 @@ export function SubjectForm({
         </div>
         <div>
           <label className={labelClass}>Instructor</label>
-          <input placeholder="Dr. Ahmed" className={inputClass} {...register("lecturer_name")} />
-          <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
-            Same name across subjects links to the same instructor page.
-          </p>
+          <InstructorPicker
+            userId={userId}
+            value={watch("lecturer_name") ?? ""}
+            onChange={(name) => setValue("lecturer_name", name, { shouldDirty: true })}
+            inputClass={inputClass}
+          />
         </div>
         <div>
           <label className={labelClass}>Credit hrs</label>

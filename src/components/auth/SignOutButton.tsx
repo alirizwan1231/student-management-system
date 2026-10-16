@@ -1,20 +1,21 @@
 "use client";
-  import { clearCachedUser } from "@/hooks/useUser";
-import { useRouter } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/client";
+import { clearCachedUser } from "@/hooks/useUser";
 
 export function SignOutButton() {
-  const router = useRouter();
-
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
     const { db } = await import("@/lib/db");
     await db.delete();
-      clearCachedUser();
+    // delete() leaves the database closed; reopen it so the next login in this
+    // tab can read/write immediately (otherwise pages stay on "Loading...").
+    await db.open().catch(() => undefined);
+    clearCachedUser();
     navigator.serviceWorker?.controller?.postMessage({ type: "CLEAR_CACHES" });
-    router.replace("/login");
-    router.refresh();
+    // Full page load so the next login starts with a fresh app state.
+    window.location.assign("/login");
   };
 
   return (
