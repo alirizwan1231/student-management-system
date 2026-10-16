@@ -16,7 +16,7 @@ export function GroupMembers({ groupId, myRole }: { groupId: string; myRole: str
       {members.map((m) => (
         <div key={m.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
           <div>
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{m.profiles?.full_name || m.profiles?.email}</p>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{m.profiles?.full_name || "Unnamed member"}</p>
             <p className="text-xs text-slate-400 dark:text-slate-500">{m.role} · joined {new Date(m.joined_at).toLocaleDateString()}</p>
           </div>
           <div className="flex gap-2">

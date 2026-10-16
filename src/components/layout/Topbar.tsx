@@ -1,5 +1,5 @@
 "use client";
-
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { SyncStatusIndicator } from "@/components/sync/SyncStatusIndicator";
 
@@ -14,6 +14,7 @@ export function Topbar() {
         University Manager
       </p>
       <div className="flex items-center gap-2">
+        <NotificationBell placement="down" align="right" />
         <ThemeToggle />
         <SyncStatusIndicator compact />
       </div>

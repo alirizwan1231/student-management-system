@@ -15,6 +15,7 @@ import { AddTaskModal } from "@/components/tasks/AddTaskModal";
 import { AddSubjectModal } from "@/components/subjects/AddSubjectModal";
 import { AddNotesButton } from "@/components/notes/AddNotesButton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { NamePrompt } from "@/components/profile/NamePrompt";
 function greeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   if (!user || !data) {
     return <main className="p-6 text-sm text-slate-400 dark:text-slate-500">Loading...</main>;
   }
+  
   if (data.semesters.length === 0) {
     return (
       <main className="mx-auto max-w-3xl p-4 sm:p-6">
@@ -42,6 +44,7 @@ const semesterHref = data.currentSemester ? `/semesters/${data.currentSemester.i
   const allCaughtUp = data.todaysOccurrences.length === 0 && data.todaysTasks.length === 0;
   return (
     <main className="mx-auto max-w-6xl p-4 sm:p-6">
+      <NamePrompt />
       <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold text-slate-900 dark:text-slate-50">{greeting()}</h1>

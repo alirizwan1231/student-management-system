@@ -29,7 +29,7 @@ function ItemCard({ item, groupId }: { item: GroupSharedItem; groupId: string })
           <p className="font-semibold text-slate-800 dark:text-slate-100">{snap.title}</p>
           <p className="text-xs text-slate-400 dark:text-slate-500">
             {snap.subject_name && `${snap.subject_name} · `}
-            shared by {item.profiles?.full_name || item.profiles?.email} · {new Date(item.created_at).toLocaleDateString()}
+           shared by {item.profiles?.full_name || "a member"} · {new Date(item.created_at).toLocaleDateString()}
           </p>
           {snap.short_summary && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{snap.short_summary}</p>}
           {snap.deadline && <p className="mt-1 text-xs text-slate-400">Due {new Date(snap.deadline).toLocaleString()}</p>}
@@ -49,7 +49,7 @@ function ItemCard({ item, groupId }: { item: GroupSharedItem; groupId: string })
           <div className="space-y-1.5">
             {comments.map((c) => (
               <p key={c.id} className="text-xs text-slate-600 dark:text-slate-300">
-                <span className="font-semibold">{c.profiles?.full_name || c.profiles?.email}:</span> {c.message}
+                <span className="font-semibold">{c.profiles?.full_name || "Member"}:</span> {c.message}
               </p>
             ))}
           </div>

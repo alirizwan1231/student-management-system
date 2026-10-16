@@ -1,4 +1,5 @@
 "use client";
+   import { GroupTasks } from "@/components/groups/GroupTasks";
 import { useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { getGroup, listGroupMembers, regenerateInviteCode } from "@/lib/groups/api";
@@ -7,7 +8,7 @@ import { GroupLibrary } from "@/components/groups/GroupLibrary";
 import { GroupMembers } from "@/components/groups/GroupMembers";
 import type { Group } from "@/types/groups";
 import { GroupPolls } from "@/components/groups/GroupPolls";
-const TABS = ["Overview", "Library", "Polls", "Members"] as const;
+   const TABS = ["Overview", "Tasks", "Library", "Polls", "Members"] as const;
 export function GroupDetail({ groupId }: { groupId: string }) {
   const { user } = useUser();
   const [group, setGroup] = useState<Group | null>(null);
@@ -44,6 +45,7 @@ export function GroupDetail({ groupId }: { groupId: string }) {
         ))}
       </div>
       {tab === "Overview" && <GroupOverview groupId={groupId} myRole={myRole} />}
+         {tab === "Tasks" && user && <GroupTasks groupId={groupId} groupName={group.name} myRole={myRole} userId={user.id} />}
       {tab === "Library" && <GroupLibrary groupId={groupId} />}
       {tab === "Polls" && <GroupPolls groupId={groupId} myRole={myRole} />}
       {tab === "Members" && <GroupMembers groupId={groupId} myRole={myRole} />}

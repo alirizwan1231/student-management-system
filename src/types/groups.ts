@@ -8,6 +8,7 @@ export interface Group {
   semester_id: string | null;
   invite_code: string;
   avatar_url: string | null;
+    tasks_policy?: "everyone" | "staff";
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -53,6 +54,7 @@ export interface GroupSharedItem {
   source_type: SharedSourceType;
   source_id: string;
   snapshot: LectureSnapshot | TaskSnapshot | ResourceSnapshot;
+    group_task_id?: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

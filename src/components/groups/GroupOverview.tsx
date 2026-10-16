@@ -23,7 +23,7 @@ export function GroupOverview({ groupId, myRole }: { groupId: string; myRole: st
           announcements.map((a) => (
             <div key={a.id} className="rounded-xl border border-brand-200 bg-brand-50 p-3 dark:border-brand-500/20 dark:bg-brand-500/10">
               <p className="text-sm text-slate-700 dark:text-slate-200">{a.message}</p>
-              <p className="mt-1 text-xs text-slate-400">Posted by {a.profiles?.full_name || a.profiles?.email} · {new Date(a.created_at).toLocaleDateString()}</p>
+              <p className="mt-1 text-xs text-slate-400">Posted by {a.profiles?.full_name || "a member"} · {new Date(a.created_at).toLocaleDateString()}</p>
             </div>
           ))
         )}

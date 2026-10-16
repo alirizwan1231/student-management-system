@@ -11,6 +11,7 @@ import { AddNotesButton } from "@/components/notes/AddNotesButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { SyncStatusIndicator } from "@/components/sync/SyncStatusIndicator";
 import { GlobalSearchModal } from "@/components/search/GlobalSearchModal";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -57,10 +58,10 @@ export function Sidebar() {
         );
       })}
 
-      <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
-        <ThemeToggle />
-        <SyncStatusIndicator />
-      </div>
+       <div className="flex items-center gap-1">
+    <ThemeToggle />
+    <NotificationBell placement="up" align="left" />
+  </div>
     </nav>
   );
 }
