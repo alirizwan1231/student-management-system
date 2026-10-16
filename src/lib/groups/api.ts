@@ -1,6 +1,5 @@
 "use client";
 import { getGroupmateNames, type NameMap } from "@/lib/groups/profiles";
-"use client";
 import { withReadCache } from "@/lib/groups/readCache";
 import { createClient } from "@/lib/supabase/client";
 import type {
