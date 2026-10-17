@@ -4,7 +4,7 @@ import { useSyncStatus } from "@/lib/sync/context";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { AccountDataSection } from "@/components/settings/AccountDataSection";
 import { RemindersSection } from "@/components/settings/RemindersSection";
-
+import { SyncCheckSection } from "@/components/settings/SyncCheckSection";
 export default function SettingsPage() {
   const { status, lastSyncedAt, triggerSync } = useSyncStatus();
 
@@ -159,6 +159,7 @@ export default function SettingsPage() {
           </div>
         </section>
         <ChangePasswordSection />
+        <SyncCheckSection />
         <RemindersSection />
         <AccountDataSection />
       </div>

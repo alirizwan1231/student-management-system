@@ -28,8 +28,8 @@ export async function runSyncCycle(userId: string): Promise<SyncCycleResult> {
     const pullResult = await pullRemoteChanges(userId);
     const uploadResult = await drainPendingUploads();
 
-    const anyFailed = pushResult.failed > 0 || uploadResult.failed > 0;
-    const status: SyncStatus = anyFailed ? "sync_failed" : "synced";
+  const anyFailed = pushResult.failed > 0 || uploadResult.failed > 0 || pullResult.failedTables.length > 0;
+      const status: SyncStatus = anyFailed ? "sync_failed" : "synced";
 
     await setMeta("last_full_sync_at", new Date().toISOString());
 
@@ -38,8 +38,7 @@ export async function runSyncCycle(userId: string): Promise<SyncCycleResult> {
       pushed: pushResult.pushed,
       pulled: pullResult.pulled,
       uploaded: uploadResult.uploaded,
-      failed: pushResult.failed + uploadResult.failed,
-    };
+  failed: pushResult.failed + uploadResult.failed + pullResult.failedTables.length,    };
   } catch {
     return { status: "sync_failed", pushed: 0, pulled: 0, uploaded: 0, failed: 1 };
   }
