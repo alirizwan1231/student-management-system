@@ -6,6 +6,7 @@ import { CheckCircle2, AlertTriangle, RefreshCw, XCircle } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { useSyncStatus } from "@/lib/sync/context";
 import { runDiagnostics, type TableDiagnostic } from "@/lib/sync/diagnostics";
+import { drainPendingUploads } from "@/lib/sync/uploads";
 import { resetSyncWatermarks } from "@/lib/sync/pull";
 import { cn } from "@/lib/utils/cn";
 
@@ -18,7 +19,7 @@ function verdict(d: TableDiagnostic) {
 }
 
 // Shows, table by table, whether this device and the cloud agree, and can
-// re-download everything if something is missing.
+// retry uploads / re-download everything if something is missing.
 export function SyncCheckSection() {
   const { user } = useUser();
   const { triggerSync } = useSyncStatus();
@@ -38,16 +39,22 @@ export function SyncCheckSection() {
     setBusy(false);
   };
 
-  const redownload = async () => {
+  const run = async (label: string, action: () => Promise<unknown>) => {
     if (!user) return;
     setBusy(true);
-    setNote("Downloading everything again...");
-    await resetSyncWatermarks();
+    setNote(label);
+    try {
+      await action();
+    } catch {
+      setNote("That action failed. Please try again.");
+      setBusy(false);
+      return;
+    }
     triggerSync();
     setTimeout(async () => {
       try {
         setRows(await runDiagnostics(user.id));
-        setNote("Done. If a row still says problem, send that message to support.");
+        setNote("Done. Any row that still says Problem shows the exact reason; please send it to support.");
       } catch {
         setNote("Finished, but the check could not run.");
       }
@@ -62,7 +69,7 @@ export function SyncCheckSection() {
       <div className="border-b border-slate-100 px-5 py-4 dark:border-white/[0.06]">
         <h2 className="text-sm font-bold text-slate-900 dark:text-white">Sync check</h2>
         <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-          Is something saved in the cloud but not showing here? Check it, then re-download.
+          Something added on another device is missing here, or the other way round? Check it, then retry.
         </p>
       </div>
       <div className="space-y-4 px-5 py-4">
@@ -71,7 +78,10 @@ export function SyncCheckSection() {
             <RefreshCw size={13} className={cn(busy && "animate-spin")} />
             Check now
           </button>
-          <button type="button" onClick={redownload} disabled={busy || !user} className="rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-60 dark:bg-brand-500">
+          <button type="button" onClick={() => run("Retrying uploads...", drainPendingUploads)} disabled={busy || !user} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-white/[0.1] dark:text-slate-200 dark:hover:bg-white/[0.04]">
+            Retry uploads
+          </button>
+          <button type="button" onClick={() => run("Downloading everything again...", resetSyncWatermarks)} disabled={busy || !user} className="rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-60 dark:bg-brand-500">
             Re-download all my data
           </button>
         </div>
@@ -95,7 +105,7 @@ export function SyncCheckSection() {
                         </span>
                       </span>
                     </div>
-                    {d.error && <p className="mt-1 break-words text-[11px] text-rose-600 dark:text-rose-400">{d.error}</p>}
+                    {d.error && <p className="mt-1 break-words text-[11px] text-rose-600 dark:text-rose-400">Problem: {d.error}</p>}
                     {d.lastSyncedAt && !d.error && (
                       <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">Last synced {formatDistanceToNow(new Date(d.lastSyncedAt), { addSuffix: true })}</p>
                     )}
@@ -103,7 +113,7 @@ export function SyncCheckSection() {
                 );
               })}
             </ul>
-            {hasIssue && <p className="text-xs text-slate-500 dark:text-slate-400">Tip: press "Re-download all my data". Rows marked "Problem" show the exact reason.</p>}
+            {hasIssue && <p className="text-xs text-slate-500 dark:text-slate-400">Tip: "Retry uploads" for rows marked "Not uploaded yet", "Re-download all my data" for rows marked "missing here".</p>}
           </>
         )}
       </div>

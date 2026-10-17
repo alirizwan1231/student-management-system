@@ -19,7 +19,7 @@ const SyncContext = createContext<SyncContextValue>({
   triggerSync: () => {},
 });
 
-const AUTO_SYNC_INTERVAL_MS = 30_000;
+const AUTO_SYNC_INTERVAL_MS = 20_000;
 
 export function SyncProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
@@ -69,10 +69,19 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       if (browserReportsOnline()) triggerSync();
     }, AUTO_SYNC_INTERVAL_MS);
 
+    // Switching back to this tab/app (e.g. after adding something on your phone) syncs right away.
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && browserReportsOnline()) triggerSync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+
     return () => {
       unsubscribeConnectivity();
       unsubscribeBus();
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
   }, [user, triggerSync]);
 
