@@ -15,12 +15,13 @@ export function GroupsList() {
   }, [user]);
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <h1 className="font-display text-2xl font-semibold text-slate-900 dark:text-slate-50">Groups</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">Shared study workspaces you're part of.</p>
         </div>
-        <div className="flex gap-2">
+        {/* Two equal buttons side by side on phones, natural width on desktop */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2 [&>button]:justify-center [&>button]:whitespace-nowrap">
           <JoinGroupModal />
           <CreateGroupModal />
         </div>

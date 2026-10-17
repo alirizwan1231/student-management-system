@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useAllLecturers } from "@/hooks/useLecturers";
+import { Select } from "@/components/ui/Select";
 
 const NEW_VALUE = "__new__";
 
@@ -54,7 +55,7 @@ export function InstructorPicker({
   const selected = names.find((n) => n.toLowerCase() === value.trim().toLowerCase()) ?? "";
   return (
     <div>
-      <select
+      <Select
         className={inputClass}
         value={selected}
         onChange={(e) => {
@@ -73,7 +74,7 @@ export function InstructorPicker({
           </option>
         ))}
         <option value={NEW_VALUE}>+ Add new instructor...</option>
-      </select>
+      </Select>
       <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">Pick an existing instructor or add a new one.</p>
     </div>
   );

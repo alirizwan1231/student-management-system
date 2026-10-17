@@ -11,6 +11,7 @@ import { computeGpa, GRADE_SCALE, gradeFor, neededOnRemaining, subjectGrade } fr
 import { Modal } from "@/components/ui/Modal";
 import { GRADE_CATEGORIES, type GradeCategory, type GradeEntry } from "@/types/grades";
 import { cn } from "@/lib/utils/cn";
+import { Select } from "@/components/ui/Select";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-100 dark:focus:bg-slate-900";
@@ -74,12 +75,12 @@ function GradeModal({ userId, entry, defaultSubject, onClose }: { userId: string
       <form onSubmit={submit} className="flex flex-col gap-3.5">
         <div>
           <label className={labelClass}>Subject</label>
-          <select value={form.subject_id} onChange={(e) => set("subject_id", e.target.value)} className={inputClass}>
+          <Select value={form.subject_id} onChange={(e) => set("subject_id", e.target.value)} className={inputClass}>
             <option value="">Choose subject...</option>
             {(subjects ?? []).map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -88,11 +89,11 @@ function GradeModal({ userId, entry, defaultSubject, onClose }: { userId: string
           </div>
           <div>
             <label className={labelClass}>Type</label>
-            <select value={form.category} onChange={(e) => set("category", e.target.value)} className={inputClass}>
+            <Select value={form.category} onChange={(e) => set("category", e.target.value)} className={inputClass}>
               {GRADE_CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -212,11 +213,11 @@ export function GradesPage() {
                     <div className="mt-3 rounded-xl bg-brand-50 p-3 text-xs leading-5 text-slate-600 dark:bg-brand-500/10 dark:text-slate-300">
                       <label className="flex flex-wrap items-center gap-2 font-semibold">
                         To finish with
-                        <select value={target} onChange={(e) => setTargets((t) => ({ ...t, [subject.id]: Number(e.target.value) }))} className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-xs dark:border-white/[0.1] dark:bg-slate-900">
+                        <Select value={target} onChange={(e) => setTargets((t) => ({ ...t, [subject.id]: Number(e.target.value) }))} className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-xs dark:border-white/[0.1] dark:bg-slate-900">
                           {TARGETS.map((t) => (
                             <option key={t} value={t}>{t}%</option>
                           ))}
-                        </select>
+                        </Select>
                       </label>
                       <p className="mt-1">
                         {need.needed > 100

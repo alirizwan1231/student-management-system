@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { createGroupTask, updateGroupTask } from "@/lib/groups/tasks";
 import type { GroupMember } from "@/types/groups";
 import type { GroupTask, GroupTaskInput } from "@/types/groupTasks";
+import { Select } from "@/components/ui/Select";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-100 dark:focus:bg-slate-900";
@@ -96,12 +97,12 @@ export function GroupTaskModal({
         {!dueDate && (
           <div>
             <label className={labelClass}>Which week?</label>
-            <select value={weekOffset} onChange={(e) => setWeekOffset(Number(e.target.value))} className={inputClass}>
+            <Select value={weekOffset} onChange={(e) => setWeekOffset(Number(e.target.value))} className={inputClass}>
               <option value={0}>This week</option>
               <option value={1}>Next week</option>
               <option value={2}>In 2 weeks</option>
               <option value={3}>In 3 weeks</option>
-            </select>
+            </Select>
           </div>
         )}
         <div>

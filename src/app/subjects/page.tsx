@@ -9,6 +9,7 @@ import { useSemesters } from "@/hooks/useSemesters";
 import { deleteSubject } from "@/lib/db/repo/subjects";
 import { AddSubjectModal } from "@/components/subjects/AddSubjectModal";
 import { EditSubjectModal } from "@/components/subjects/EditSubjectModal";
+import { Select } from "@/components/ui/Select";
 
 // All subjects across every semester, grouped by semester, with search.
 export default function SubjectsPage() {
@@ -59,7 +60,7 @@ export default function SubjectsPage() {
             className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-100"
           />
         </div>
-        <select
+        <Select
           value={semesterFilter}
           onChange={(e) => setSemesterFilter(e.target.value)}
           aria-label="Filter by semester"
@@ -69,7 +70,7 @@ export default function SubjectsPage() {
           {(semesters ?? []).map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {groups.length === 0 ? (

@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { cancelOccurrence, moveOccurrence } from "@/lib/db/repo/timetable";
 import { useAllSubjects } from "@/hooks/useSubjects";
 import type { TimetableOccurrence } from "@/lib/timetable/occurrences";
+import { Select } from "@/components/ui/Select";
 const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 export function OccurrenceMenu({ userId, occurrence }: { userId: string; occurrence: TimetableOccurrence }) {
   const [open, setOpen] = useState(false);
@@ -65,9 +66,9 @@ export function OccurrenceMenu({ userId, occurrence }: { userId: string; occurre
               </div>
               <div>
                 <label className="mb-1 block text-xs text-slate-500">Subject</label>
-                <select className={inputClass} value={newSubject} onChange={(e) => setNewSubject(e.target.value)}>
+                <Select className={inputClass} value={newSubject} onChange={(e) => setNewSubject(e.target.value)}>
                   {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                </Select>
               </div>
               <button onClick={handleMove} className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
                 Save move

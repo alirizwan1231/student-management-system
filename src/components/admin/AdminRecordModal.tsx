@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import { Select } from "@/components/ui/Select";
 type FieldType = "text" | "number" | "date" | "datetime-local" | "textarea" | "select";
 interface FieldConfig {
   key: string;
@@ -110,7 +111,7 @@ export function AdminRecordModal({
           <div key={f.key}>
             <label className={labelClass}>{f.label}</label>
             {f.type === "select" ? (
-              <select className={inputClass} value={values[f.key] ?? ""} onChange={(e) => setField(f.key, e.target.value)}>
+              <Select className={inputClass} value={values[f.key] ?? ""} onChange={(e) => setField(f.key, e.target.value)}>
                 <option value="">Select...</option>
                 {(f.options ?? sourceOptions(f.source).map((o) => o.name ?? o)).map((opt: any, i: number) =>
                   f.source ? (
@@ -123,7 +124,7 @@ export function AdminRecordModal({
                     </option>
                   )
                 )}
-              </select>
+              </Select>
             ) : f.type === "textarea" ? (
               <textarea
                 rows={3}

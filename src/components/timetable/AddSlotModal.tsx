@@ -7,6 +7,7 @@ import { timetableSlotSchema, type TimetableSlotInput } from "@/lib/validation/t
 import { createTimetableSlot } from "@/lib/db/repo/timetable";
 import { useAllSubjects } from "@/hooks/useSubjects";
 import { useAllLecturers } from "@/hooks/useLecturers";
+import { Select } from "@/components/ui/Select";
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const COLORS = ["#3366ff", "#16a34a", "#d97706", "#dc2626", "#9333ea", "#0891b2"];
 const inputClass =
@@ -36,17 +37,17 @@ export function AddSlotModal({ userId }: { userId: string }) {
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
             <div>
               <label className={labelClass}>Subject</label>
-              <select required className={inputClass} {...register("subject_id")}>
+              <Select required className={inputClass} {...register("subject_id")}>
                 <option value="">Select a subject</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
               {errors.subject_id && <p className="text-xs text-status-overdue">{errors.subject_id.message}</p>}
             </div>
             <div>
               <label className={labelClass}>Day</label>
-              <select className={inputClass} {...register("day_of_week")}>
+              <Select className={inputClass} {...register("day_of_week")}>
                 {DAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -65,10 +66,10 @@ export function AddSlotModal({ userId }: { userId: string }) {
               </div>
               <div>
                 <label className={labelClass}>Instructor (optional)</label>
-                <select className={inputClass} {...register("lecturer_id")}>
+                <Select className={inputClass} {...register("lecturer_id")}>
                   <option value="">None</option>
                   {lecturers.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

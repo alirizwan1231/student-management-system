@@ -10,6 +10,7 @@ import { createExam, deleteExam, updateExam, type ExamInput } from "@/lib/db/rep
 import { Modal } from "@/components/ui/Modal";
 import { EXAM_TYPES, type Exam, type ExamType } from "@/types/exams";
 import { cn } from "@/lib/utils/cn";
+import { Select } from "@/components/ui/Select";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-100 dark:focus:bg-slate-900";
@@ -78,21 +79,21 @@ function ExamModal({ userId, exam, onClose }: { userId: string; exam: Exam | nul
       <form onSubmit={submit} className="flex flex-col gap-3.5">
         <div>
           <label className={labelClass}>Subject</label>
-          <select value={form.subject_id} onChange={(e) => set("subject_id", e.target.value)} className={inputClass}>
+          <Select value={form.subject_id} onChange={(e) => set("subject_id", e.target.value)} className={inputClass}>
             <option value="">Choose subject...</option>
             {(subjects ?? []).map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Type</label>
-            <select value={form.exam_type} onChange={(e) => set("exam_type", e.target.value)} className={inputClass}>
+            <Select value={form.exam_type} onChange={(e) => set("exam_type", e.target.value)} className={inputClass}>
               {EXAM_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label className={labelClass}>Date</label>

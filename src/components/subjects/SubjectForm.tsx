@@ -7,6 +7,7 @@ import { createSubject, updateSubject } from "@/lib/db/repo/subjects";
 import { findOrCreateLecturer } from "@/lib/db/repo/lecturers";
 import { useSemesters } from "@/hooks/useSemesters";
 import type { Subject } from "@/types/academic";
+import { Select } from "@/components/ui/Select";
 
 type FormValues = SubjectInput & { semester_id?: string };
 
@@ -74,14 +75,14 @@ export function SubjectForm({
         {showSemesterPicker && (
           <div className="sm:col-span-2 md:col-span-4">
             <label className={labelClass}>Semester</label>
-            <select required className={inputClass} {...register("semester_id")}>
+            <Select required className={inputClass} {...register("semester_id")}>
               <option value="">Select a semester</option>
               {semesters.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
         <div>

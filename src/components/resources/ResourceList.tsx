@@ -7,6 +7,7 @@ import { getResourceFileUrl } from "@/lib/storage/client";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils/cn";
 import type { Resource } from "@/types/academic";
+import { Select } from "@/components/ui/Select";
 
 const TYPE_LABEL: Record<string, string> = {
   pdf: "PDF",
@@ -67,7 +68,7 @@ export function ResourceList({ resources }: { resources: Resource[] }) {
             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-100"
           />
         </div>
-        <select
+        <Select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
           className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 dark:border-white/[0.08] dark:bg-slate-900 dark:text-slate-300"
@@ -76,7 +77,7 @@ export function ResourceList({ resources }: { resources: Resource[] }) {
           <option value="newest">Newest first</option>
           <option value="oldest">Oldest first</option>
           <option value="name">Name A-Z</option>
-        </select>
+        </Select>
       </div>
 
       {typeKeys.length > 1 && (

@@ -13,6 +13,7 @@ import { attachNoteToTask } from "@/lib/groups/tasks";
 import { buildLectureSnapshot } from "@/lib/groups/snapshot";
 import type { GroupSharedItem, LectureSnapshot } from "@/types/groups";
 import type { GroupTask } from "@/types/groupTasks";
+import { Select } from "@/components/ui/Select";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-500/10 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-100 dark:focus:bg-slate-900";
@@ -89,12 +90,12 @@ export function AddToMyTasksModal({
             <b>{task.title}</b>
             {task.due_date ? ` • due ${task.due_date}` : ""}
           </p>
-          <select className={inputClass} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+          <Select className={inputClass} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
             <option value="">Choose your subject...</option>
             {(subjects ?? []).map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
-          </select>
+          </Select>
           {notes.length > 0 && (
             <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input type="checkbox" checked={withNotes} onChange={(e) => setWithNotes(e.target.checked)} />

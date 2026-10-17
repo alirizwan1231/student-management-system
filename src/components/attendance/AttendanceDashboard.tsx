@@ -12,6 +12,7 @@ import { deleteAttendance, markAttendance } from "@/lib/db/repo/attendance";
 import { computeAttendance, overallPercentage, type AttendanceLevel } from "@/lib/attendance/stats";
 import type { AttendanceStatus } from "@/types/attendance";
 import { cn } from "@/lib/utils/cn";
+import { Select } from "@/components/ui/Select";
 
 const TARGET_KEY = "um-attendance-target";
 const TARGETS = [60, 65, 70, 75, 80, 85, 90];
@@ -140,7 +141,7 @@ export function AttendanceDashboard() {
         <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
           <Target size={14} />
           Required attendance
-          <select
+          <Select
             value={target}
             onChange={(e) => changeTarget(Number(e.target.value))}
             className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 dark:border-white/[0.08] dark:bg-slate-900 dark:text-slate-200"
@@ -148,7 +149,7 @@ export function AttendanceDashboard() {
             {TARGETS.map((t) => (
               <option key={t} value={t}>{t}%</option>
             ))}
-          </select>
+          </Select>
         </label>
       </header>
 
@@ -211,12 +212,12 @@ export function AttendanceDashboard() {
         <div className="mt-4 border-t border-slate-100 pt-4 dark:border-white/[0.06]">
           <p className="mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Extra class (not in timetable)</p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <select value={extraSubject} onChange={(e) => setExtraSubject(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-medium text-slate-700 dark:border-white/[0.08] dark:bg-slate-900 dark:text-slate-200">
+            <Select value={extraSubject} onChange={(e) => setExtraSubject(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-medium text-slate-700 dark:border-white/[0.08] dark:bg-slate-900 dark:text-slate-200">
               <option value="">Choose subject...</option>
               {(subjects ?? []).map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
-            </select>
+            </Select>
             {extraSubject && <StatusButtons subjectId={extraSubject} slotId={null} />}
           </div>
         </div>

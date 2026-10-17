@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import type { AdminUserRow } from "@/lib/admin/data";
+import { Select } from "@/components/ui/Select";
 const PAGE_SIZE = 20;
 export function AdminUsersList() {
   const [search, setSearch] = useState("");
@@ -43,7 +44,7 @@ export function AdminUsersList() {
             className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm font-medium text-slate-900 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-100"
           />
         </div>
-        <select
+        <Select
           value={role}
           onChange={(e) => {
             setRole(e.target.value as typeof role);
@@ -54,7 +55,7 @@ className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-
           <option value="all">All roles</option>
           <option value="student">Student</option>
           <option value="admin">Admin</option>
-        </select>
+        </Select>
       </div>
       <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-white/[0.07] dark:bg-white/[0.025]">
         <div className="overflow-x-auto">

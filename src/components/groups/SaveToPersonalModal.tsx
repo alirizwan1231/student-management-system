@@ -8,6 +8,7 @@ import { createTask } from "@/lib/db/repo/tasks";
 import { createResource } from "@/lib/db/repo/resources";
 import { queueFileUpload } from "@/lib/db/repo/pendingUploads";
 import type { GroupSharedItem } from "@/types/groups";
+import { Select } from "@/components/ui/Select";
 const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 export function SaveToPersonalModal({ item, onClose }: { item: GroupSharedItem; onClose: () => void }) {
   const { user } = useUser();
@@ -64,10 +65,10 @@ const handleSave = async () => {
         <p className="text-sm font-semibold text-status-completed">Saved to your workspace.</p>
       ) : (
         <div className="flex flex-col gap-3">
-          <select className={inputClass} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+          <Select className={inputClass} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
             <option value="">Select a subject to save into</option>
             {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          </Select>
           <button disabled={!subjectId || saving} onClick={handleSave} className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60">
             {saving ? "Saving..." : "Save"}
           </button>

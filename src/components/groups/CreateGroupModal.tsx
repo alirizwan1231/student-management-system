@@ -6,6 +6,7 @@ import { useAllSubjects } from "@/hooks/useSubjects";
 import { useSemesters } from "@/hooks/useSemesters";
 import { useUser } from "@/hooks/useUser";
 import { createGroup } from "@/lib/groups/api";
+import { Select } from "@/components/ui/Select";
 const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 const labelClass = "mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400";
 export function CreateGroupModal() {
@@ -52,17 +53,17 @@ export function CreateGroupModal() {
             </div>
             <div>
               <label className={labelClass}>Subject (optional)</label>
-              <select className={inputClass} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+              <Select className={inputClass} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
                 <option value="">None</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             </div>
             <div>
               <label className={labelClass}>Semester (optional)</label>
-              <select className={inputClass} value={semesterId} onChange={(e) => setSemesterId(e.target.value)}>
+              <Select className={inputClass} value={semesterId} onChange={(e) => setSemesterId(e.target.value)}>
                 <option value="">None</option>
                 {semesters.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             </div>
             {error && <p className="text-xs text-status-overdue">{error}</p>}
             <button disabled={saving} onClick={handleCreate} className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60">

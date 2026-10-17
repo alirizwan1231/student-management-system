@@ -5,6 +5,12 @@
 html, body {
   height: 100%;
 }
+/* Never let one wide element make the whole page scroll sideways. That is what makes
+   phones zoom out and leaves a blank gap on the right. "clip" does not break sticky headers. */
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
 
 /* Smooth color transition when the dark-mode toggle flips the class on
    <html>, rather than an abrupt flash. */

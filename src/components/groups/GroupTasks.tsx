@@ -22,6 +22,7 @@ import { SaveToPersonalModal } from "@/components/groups/SaveToPersonalModal";
 import type { GroupMember, GroupSharedItem, LectureSnapshot } from "@/types/groups";
 import type { GroupTask, GroupTaskCompletion, TasksPolicy } from "@/types/groupTasks";
 import { cn } from "@/lib/utils/cn";
+import { Select } from "@/components/ui/Select";
 
 type Filter = "week" | "upcoming" | "earlier" | "done";
 const FILTERS: { id: Filter; label: string }[] = [
@@ -171,10 +172,10 @@ export function GroupTasks({ groupId, groupName, myRole, userId }: { groupId: st
       {myRole === "owner" && (
         <label className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
           Who can add tasks?
-          <select value={policy} onChange={(e) => changePolicy(e.target.value as TasksPolicy)} className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs dark:border-white/[0.08] dark:bg-slate-900 dark:text-slate-200">
+          <Select value={policy} onChange={(e) => changePolicy(e.target.value as TasksPolicy)} className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs dark:border-white/[0.08] dark:bg-slate-900 dark:text-slate-200">
             <option value="everyone">Everyone in the group</option>
             <option value="staff">Only owner and moderators</option>
-          </select>
+          </Select>
         </label>
       )}
 

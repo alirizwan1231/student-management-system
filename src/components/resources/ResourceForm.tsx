@@ -8,6 +8,7 @@ import { createResource } from "@/lib/db/repo/resources";
 import { queueFileUpload } from "@/lib/db/repo/pendingUploads";
 import { partitionValidFiles } from "@/lib/utils/fileGuard";
 import { useToast } from "@/components/ui/Toast";
+import { Select } from "@/components/ui/Select";
 
 const inputClass =
   "rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
@@ -65,14 +66,14 @@ export function ResourceForm({
         </div>
         <div>
           <label className={labelClass}>Type</label>
-          <select className={inputClass} {...register("resource_type")}>
+          <Select className={inputClass} {...register("resource_type")}>
             <option value="pdf">PDF</option>
             <option value="ppt">Slides</option>
             <option value="doc">Document</option>
             <option value="image">Image</option>
             <option value="link">Link</option>
             <option value="other">Other</option>
-          </select>
+          </Select>
         </div>
         <div>
           <label className={labelClass}>Link (optional)</label>
