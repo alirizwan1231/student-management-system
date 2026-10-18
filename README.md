@@ -1,0 +1,38 @@
+# University Management System
+
+A **personal, offline-first** academic management app. Every student has
+their own completely private workspace — semesters, subjects, lectures,
+short notes, tasks, and resources are never shared between users.
+
+## Architecture
+
+- **UI reads/writes IndexedDB (Dexie)** as the local source of truth —
+  every CRUD screen works fully offline from day one.
+- **Supabase (Postgres) is the remote store**, reached only through the sync
+  engine (`src/lib/sync/`), never directly from components.
+- **Row Level Security** on every table enforces `user_id = auth.uid()` —
+  there is no shared/admin data model in this app.
+- Records use **client-generated UUIDs** so they can be created while
+  offline, and **soft deletes** (`deleted_at`) so deletions sync correctly
+  across devices.
+
+## Getting started
+
+1. `npm install`
+2. Copy `.env.example` to `.env.local` and fill in your Supabase project's
+   URL and anon key.
+3. Apply the SQL files in `supabase/migrations/` in order (added in batch 02).
+4. `npm run dev` and open http://localhost:3000
+
+## Generation process
+
+This project is scaffolded by numbered Python batch scripts in `../batches/`,
+run via `../run_all.py`. See the top-level generator README for the full
+batch plan. Batches 04–07 build CRUD directly on Dexie (not Supabase), so
+batch 10 only has to wire a sync queue on top of existing writes rather than
+retrofit offline support later.
+
+## Roadmap to Android
+
+Web app -> PWA (batch 11) -> wrapped with Capacitor -> Android APK, using the
+same Supabase project and the same user accounts. No separate backend.
