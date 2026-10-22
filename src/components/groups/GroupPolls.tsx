@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { listPolls, createPoll, voteOnPoll, closePoll, type PollWithResults } from "@/lib/groups/polls";
+import { Attribution } from "@/components/groups/Attribution";
 export function GroupPolls({ groupId, myRole }: { groupId: string; myRole: string }) {
   const { user } = useUser();
   const [polls, setPolls] = useState<PollWithResults[]>([]);
@@ -54,6 +55,7 @@ export function GroupPolls({ groupId, myRole }: { groupId: string; myRole: strin
             <div key={poll.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-2 flex items-center justify-between">
                 <p className="font-semibold text-slate-800 dark:text-slate-100">📊 {poll.question}</p>
+                <Attribution prefix="Created by" name={poll.creator_name} avatarUrl={poll.creator_avatar} userId={poll.created_by} date={poll.created_at} className="mt-1" />
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${poll.is_closed ? "bg-slate-100 text-slate-500 dark:bg-white/[0.06]" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"}`}>
                   {poll.is_closed ? "Closed" : "Open"}
                 </span>

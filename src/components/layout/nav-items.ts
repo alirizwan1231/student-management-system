@@ -1,4 +1,5 @@
 import {
+  UploadCloud,
   BookOpen,
   CalendarDays,
   CalendarClock,
@@ -25,6 +26,7 @@ export const NAV_ITEMS = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/attendance", label: "Attendance", icon: UserCheck },
   { href: "/exams", label: "Exams", icon: ClipboardList },
+  { href: "/uploads", label: "Uploads", icon: UploadCloud },
   { href: "/grades", label: "Grades", icon: Award },
   { href: "/groups", label: "Groups", icon: UsersRound },
   { href: "/profile", label: "Profile", icon: User },

@@ -19,10 +19,16 @@ export interface PendingUpload {
   user_id: string;
   file_name: string;
   file_blob: Blob;
-  status: "pending" | "uploading" | "failed";
+  status: "pending" | "uploading" | "failed" | "done";
   attempts: number;
   last_error: string | null;
   created_at: string;
+  file_size?: number;
+  file_type?: string;
+  next_attempt_at?: string | null; // failed uploads wait before the next automatic retry
+  started_at?: string | null; // when this upload was claimed (detects a crashed upload)
+  completed_at?: string | null;
+  storage_path?: string | null; // set as soon as the file is in storage, so a retry never uploads twice
 }
 export interface MetaEntry {
   key: string;

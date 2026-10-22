@@ -1,5 +1,6 @@
 import type { SyncStatus } from "@/types/academic";
 import { browserReportsOnline } from "@/lib/sync/connectivity";
+import { getAppMode } from "@/lib/sync/mode";
 import { pushPendingChanges } from "@/lib/sync/push";
 import { pullRemoteChanges } from "@/lib/sync/pull";
 import { drainPendingUploads } from "@/lib/sync/uploads";
@@ -16,40 +17,58 @@ export interface SyncCycleResult {
   failed: number;
 }
 
-// One full sync cycle: push local changes first (so this device's edits
-// win any near-simultaneous conflict against a stale pull), then pull
-// remote changes, then drain the file-upload queue. Order matters -- see
-// the note in pull.ts about why push must run first.
-export async function runSyncCycle(userId: string): Promise<SyncCycleResult> {
-  // Only "the browser says we are offline" skips syncing. A failed health ping (blocked by CORS,
-  // a captive portal...) used to mark the app offline and silently stop ALL syncing; now we try for
-  // real and report any failure per table in Settings -> Sync check.
-  if (!browserReportsOnline()) {
+// Only one cycle runs at a time; a second request just waits for (and shares) the running one,
+// so nothing is pushed or uploaded twice.
+let inFlight: Promise<SyncCycleResult> | null = null;
+
+export function runSyncCycle(userId: string): Promise<SyncCycleResult> {
+  if (!inFlight) inFlight = doCycle(userId).finally(() => void (inFlight = null));
+  return inFlight;
+}
+
+// push edits -> pull remote changes -> upload files. The three steps are INDEPENDENT: a failure in
+// one (e.g. a login problem while pushing) no longer stops the others, which is what used to leave
+// files stuck on "Waiting for upload".
+async function doCycle(userId: string): Promise<SyncCycleResult> {
+  if (getAppMode() === "offline" || !browserReportsOnline()) {
     return { status: "offline", pushed: 0, pulled: 0, uploaded: 0, failed: 0 };
   }
 
-  try {
-    const pushResult = await pushPendingChanges();
-    const pullResult = await pullRemoteChanges(userId);
-    const uploadResult = await drainPendingUploads();
-
-    const anyFailed = pushResult.failed > 0 || uploadResult.failed > 0 || pullResult.failedTables.length > 0;
-    const status: SyncStatus = anyFailed ? "sync_failed" : "synced";
-
-    await setMeta("last_full_sync_at", new Date().toISOString());
-    await setMeta(CYCLE_ERROR_KEY, "").catch(() => undefined);
-
-    return {
-      status,
-      pushed: pushResult.pushed,
-      pulled: pullResult.pulled,
-      uploaded: uploadResult.uploaded,
-      failed: pushResult.failed + uploadResult.failed + pullResult.failedTables.length,
-    };
-  } catch (err) {
+  let pushed = 0;
+  let pulled = 0;
+  let uploaded = 0;
+  let failed = 0;
+  let firstError: string | null = null;
+  const note = (err: unknown) => {
+    failed += 1;
     const raw = err instanceof Error ? err.message : (err as { message?: string })?.message ?? "Sync failed";
-    console.error("Sync cycle failed:", err);
-    await setMeta(CYCLE_ERROR_KEY, explainSyncError(raw)).catch(() => undefined);
-    return { status: "sync_failed", pushed: 0, pulled: 0, uploaded: 0, failed: 1 };
+    console.error("Sync step failed:", err);
+    firstError ??= explainSyncError(raw);
+  };
+
+  try {
+    const r = await pushPendingChanges();
+    pushed = r.pushed;
+    failed += r.failed;
+  } catch (err) {
+    note(err);
   }
+  try {
+    const r = await pullRemoteChanges(userId);
+    pulled = r.pulled;
+    failed += r.failedTables.length;
+  } catch (err) {
+    note(err);
+  }
+  try {
+    const r = await drainPendingUploads();
+    uploaded = r.uploaded;
+    failed += r.failed;
+  } catch (err) {
+    note(err);
+  }
+
+  await setMeta(CYCLE_ERROR_KEY, firstError ?? "").catch(() => undefined);
+  if (failed === 0) await setMeta("last_full_sync_at", new Date().toISOString()).catch(() => undefined);
+  return { status: failed > 0 ? "sync_failed" : "synced", pushed, pulled, uploaded, failed };
 }

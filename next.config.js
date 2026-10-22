@@ -4,6 +4,12 @@ const nextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],
   },
+  // pdf.js tries to load the optional "canvas" package on the server; we only use it in the browser.
+  webpack: (config) => {
+    config.resolve.alias.canvas = false;
+    config.resolve.alias.encoding = false;
+    return config;
+  },
   async headers() {
     return [
       {

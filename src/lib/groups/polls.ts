@@ -1,8 +1,11 @@
 "use client";
 import { createClient } from "@/lib/supabase/client";
+import { getGroupmateProfiles } from "@/lib/groups/profiles";
 export interface PollOption { id: string; option_text: string; position: number; }
 export interface PollWithResults {
   id: string; group_id: string; created_by: string; question: string; is_closed: boolean; created_at: string;
+  creator_name: string | null;
+  creator_avatar: string | null;
   totalVotes: number;
   myVoteOptionId: string | null;
   options: (PollOption & { voteCount: number; percentage: number })[];
@@ -15,6 +18,7 @@ export async function listPolls(groupId: string): Promise<PollWithResults[]> {
   const pollIds = polls.map((p) => p.id);
   const { data: options } = await supabase.from("group_poll_options").select("*").in("poll_id", pollIds).order("position", { ascending: true });
   const { data: votes } = await supabase.from("group_poll_votes").select("*").in("poll_id", pollIds);
+  const people = await getGroupmateProfiles().catch(() => ({}) as Record<string, { name: string | null; avatar: string | null }>);
   return polls.map((poll) => {
     const pollOptions = (options ?? []).filter((o) => o.poll_id === poll.id);
     const pollVotes = (votes ?? []).filter((v) => v.poll_id === poll.id);
@@ -22,6 +26,8 @@ export async function listPolls(groupId: string): Promise<PollWithResults[]> {
     const myVote = pollVotes.find((v) => v.user_id === user?.id);
     return {
       ...poll,
+      creator_name: people[poll.created_by]?.name ?? null,
+      creator_avatar: people[poll.created_by]?.avatar ?? null,
       totalVotes,
       myVoteOptionId: myVote?.option_id ?? null,
       options: pollOptions.map((o) => {

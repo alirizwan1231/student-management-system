@@ -4,6 +4,9 @@ import { listSharedItems, listComments, postComment } from "@/lib/groups/api";
 import type { GroupSharedItem, SharedSourceType } from "@/types/groups";
 import { useUser } from "@/hooks/useUser";
 import { SaveToPersonalModal } from "@/components/groups/SaveToPersonalModal";
+import { Attribution } from "@/components/groups/Attribution";
+import { openFileViewer } from "@/lib/files/viewerBus";
+import { baseName } from "@/lib/files/types";
 const TABS: { key: SharedSourceType; label: string }[] = [
   { key: "lecture", label: "Lectures / Notes" },
   { key: "task", label: "Tasks" },
@@ -17,20 +20,24 @@ function ItemCard({ item, groupId }: { item: GroupSharedItem; groupId: string })
   const [saveOpen, setSaveOpen] = useState(false);
   const snap = item.snapshot as any;
   const loadComments = () => listComments(item.id).then(setComments);
-  const openFile = async () => {
-    const res = await fetch(`/api/groups/resources/${item.id}/download`);
-    const body = await res.json();
-    if (body.url) window.open(body.url, "_blank");
-  };
+  const openFile = () =>
+    openFileViewer({
+      name: baseName(String(snap.storage_path || snap.file_name || snap.title || "file")),
+      cacheKey: `group:${item.id}`,
+      getUrl: async () => {
+        const res = await fetch(`/api/groups/resources/${item.id}/download`);
+        const body = await res.json();
+        if (!body.url) throw new Error("No download link");
+        return body.url as string;
+      },
+    });
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-slate-800 dark:text-slate-100">{snap.title}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            {snap.subject_name && `${snap.subject_name} · `}
-            shared by {item.profiles?.full_name || "a member"} · {new Date(item.created_at).toLocaleDateString()}
-          </p>
+          {snap.subject_name && <p className="text-xs text-slate-400 dark:text-slate-500">{snap.subject_name}</p>}
+          <Attribution prefix="Shared by" name={item.profiles?.full_name} avatarUrl={item.profiles?.avatar_url} userId={item.shared_by} date={item.created_at} className="mt-1" />
           {snap.short_summary && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{snap.short_summary}</p>}
           {snap.deadline && <p className="mt-1 text-xs text-slate-400">Due {new Date(snap.deadline).toLocaleString()}</p>}
         </div>

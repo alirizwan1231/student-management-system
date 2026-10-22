@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { clearCachedUser } from "@/hooks/useUser";
+import { clearFileCache } from "@/lib/storage/fileCache";
 
 export function SignOutButton() {
   const handleSignOut = async () => {
@@ -13,6 +14,7 @@ export function SignOutButton() {
     // tab can read/write immediately (otherwise pages stay on "Loading...").
     await db.open().catch(() => undefined);
     clearCachedUser();
+    await clearFileCache();
     navigator.serviceWorker?.controller?.postMessage({ type: "CLEAR_CACHES" });
     // Full page load so the next login starts with a fresh app state.
     window.location.assign("/login");

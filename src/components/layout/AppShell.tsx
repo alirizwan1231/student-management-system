@@ -7,6 +7,8 @@ import { Topbar } from "./Topbar";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ReminderManager } from "@/components/pwa/ReminderManager";
 import { UnsyncedBanner } from "@/components/sync/UnsyncedBanner";
+import { FileViewerHost } from "@/components/files/FileViewer";
+
 const CHROME_LESS_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password", "/offline", "/auth/callback", "/auth/confirm", "/privacy", "/terms", "/contact", "/"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -28,6 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <InstallPrompt />
       <ReminderManager />
       <UnsyncedBanner />
+      <FileViewerHost />
     </div>
   );
 }

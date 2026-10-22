@@ -14,6 +14,8 @@ import { getResourceFileUrl } from "@/lib/storage/client";
 import { inferResourceType } from "@/lib/utils/fileType";
 import { partitionValidFiles } from "@/lib/utils/fileGuard";
 import type { Resource } from "@/types/academic";
+import { openFileViewer } from "@/lib/files/viewerBus";
+import { baseName } from "@/lib/files/types";
 
 const TYPE_LABEL: Record<string, string> = {
   pdf: "PDF",
@@ -62,31 +64,18 @@ export function NotesAttachments({ lectureId, editable = false }: { lectureId: s
 
   const openResource = async (resource: Resource) => {
     setError(null);
-    const tab = window.open("about:blank", "_blank");
-    try {
-      let url: string | null = null;
-      if (resource.url) {
-        url = resource.url;
-      } else if (resource.storage_path) {
-        url = await getResourceFileUrl(resource.storage_path);
-      } else {
-        const pending = await listPendingUploadsForResource(resource.id);
-        if (pending[0]) {
-          url = URL.createObjectURL(pending[0].file_blob);
-          setTimeout(() => URL.revokeObjectURL(url as string), 120000);
-        }
-      }
-      if (!url) throw new Error("no source");
-      if (tab) {
-        tab.opener = null;
-        tab.location.href = url;
-      } else {
-        window.location.href = url;
-      }
-    } catch {
-      tab?.close();
-      setError("Couldn't open this file. If you're offline, try again once you're back online.");
+    if (resource.url) {
+      window.open(resource.url, "_blank", "noopener,noreferrer");
+      return;
     }
+    const path = resource.storage_path;
+    if (path) {
+      openFileViewer({ name: baseName(path), cacheKey: path, getUrl: () => getResourceFileUrl(path) });
+      return;
+    }
+    const pending = (await listPendingUploadsForResource(resource.id)).find((u) => u.status !== "done");
+    if (pending) openFileViewer({ name: resource.title, blob: pending.file_blob });
+    else setError("This file is still waiting to upload. Check the Uploads page.");
   };
 
   const remove = async (resource: Resource) => {

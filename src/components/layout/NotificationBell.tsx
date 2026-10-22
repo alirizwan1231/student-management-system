@@ -7,6 +7,7 @@ import { Bell, FileText, ListChecks, Megaphone, MessageSquare } from "lucide-rea
 import { useUser } from "@/hooks/useUser";
 import { listNotifications, markAllNotificationsRead, markNotificationRead, type NotificationRow } from "@/lib/groups/notifications";
 import { cn } from "@/lib/utils/cn";
+import { getAppMode } from "@/lib/sync/mode";
 
 const ICONS: Record<string, typeof Bell> = {
   shared_item: FileText,
@@ -26,7 +27,7 @@ export function NotificationBell({ placement = "down", align = "right" }: { plac
   const boxRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
-    if (!navigator.onLine) return;
+    if (!navigator.onLine || getAppMode() === "offline") return;
     try {
       setItems(await listNotifications());
     } catch {

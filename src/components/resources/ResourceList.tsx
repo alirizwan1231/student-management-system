@@ -8,6 +8,8 @@ import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils/cn";
 import type { Resource } from "@/types/academic";
 import { Select } from "@/components/ui/Select";
+import { openFileViewer } from "@/lib/files/viewerBus";
+import { baseName } from "@/lib/files/types";
 
 const TYPE_LABEL: Record<string, string> = {
   pdf: "PDF",
@@ -43,11 +45,8 @@ export function ResourceList({ resources }: { resources: Resource[] }) {
 
   const download = async (r: Resource) => {
     if (!r.storage_path) return;
-    try {
-      window.open(await getResourceFileUrl(r.storage_path), "_blank", "noopener,noreferrer");
-    } catch {
-      showToast("Could not open the file. Check your connection and try again.", "error");
-    }
+    const path = r.storage_path;
+    openFileViewer({ name: baseName(path), cacheKey: path, getUrl: () => getResourceFileUrl(path) });
   };
 
   if (resources.length === 0) {
@@ -126,7 +125,7 @@ export function ResourceList({ resources }: { resources: Resource[] }) {
                 )}
                 {r.storage_path && (
                   <button type="button" onClick={() => void download(r)} className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">
-                    Download
+                    Open
                   </button>
                 )}
                 <button onClick={() => deleteResource(r.id)} className="text-xs font-medium text-status-overdue hover:underline">

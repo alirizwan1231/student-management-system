@@ -9,7 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "cap:sync": "npx cap sync",
-    "cap:android": "npx cap open android"
+    "cap:android": "npx cap open android",
+    "postinstall": "node scripts/copy-pdf-worker.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
@@ -24,10 +25,13 @@
     "dexie": "^4.0.8",
     "dexie-react-hooks": "^1.1.7",
     "lucide-react": "^0.446.0",
+    "mammoth": "^1.8.0",
     "next": "14.2.13",
+    "pdfjs-dist": "3.11.174",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.0",
+    "read-excel-file": "^5.8.5",
     "recharts": "^2.12.7",
     "tailwind-merge": "^2.5.2",
     "uuid": "^9.0.1",

@@ -19,7 +19,7 @@ export interface GroupMember {
   user_id: string;
   role: GroupRole;
   joined_at: string;
-  profiles?: { full_name: string | null; email: string | null };
+  profiles?: { full_name: string | null; email: string | null; avatar_url?: string | null };
 }
 export type SharedSourceType = "lecture" | "resource" | "task";
 export interface LectureSnapshot {
@@ -58,7 +58,7 @@ export interface GroupSharedItem {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-  profiles?: { full_name: string | null; email: string | null };
+  profiles?: { full_name: string | null; email: string | null; avatar_url?: string | null };
 }
 export interface GroupAnnouncement {
   id: string;
@@ -66,7 +66,7 @@ export interface GroupAnnouncement {
   posted_by: string;
   message: string;
   created_at: string;
-  profiles?: { full_name: string | null; email: string | null };
+  profiles?: { full_name: string | null; email: string | null; avatar_url?: string | null };
 }
 export interface GroupComment {
   id: string;
@@ -75,7 +75,7 @@ export interface GroupComment {
   user_id: string;
   message: string;
   created_at: string;
-  profiles?: { full_name: string | null; email: string | null };
+  profiles?: { full_name: string | null; email: string | null; avatar_url?: string | null };
 }
 export interface GroupNotification {
   id: string;

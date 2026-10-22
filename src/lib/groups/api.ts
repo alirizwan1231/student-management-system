@@ -1,5 +1,5 @@
 "use client";
-import { getGroupmateNames, type NameMap } from "@/lib/groups/profiles";
+import { getGroupmateNames, getGroupmateProfiles, type NameMap } from "@/lib/groups/profiles";
 import { withReadCache } from "@/lib/groups/readCache";
 import { createClient } from "@/lib/supabase/client";
 import type {
@@ -72,8 +72,8 @@ async function getGroup_online(groupId: string): Promise<Group | null> {
 }
 // People in my groups -> their display names (see lib/groups/profiles.ts).
 async function withNames<T extends Record<string, any>>(rows: T[], userKey: string) {
-  const names: NameMap = await getGroupmateNames().catch(() => ({}) as NameMap);
-  return rows.map((r) => ({ ...r, profiles: { full_name: names[r[userKey]] ?? null, email: null } }));
+  const people = await getGroupmateProfiles().catch(() => ({}) as Record<string, { name: string | null; avatar: string | null }>);
+  return rows.map((r) => ({ ...r, profiles: { full_name: people[r[userKey]]?.name ?? null, avatar_url: people[r[userKey]]?.avatar ?? null, email: null } }));
 }
 async function listGroupMembers_online(groupId: string): Promise<GroupMember[]> {
   const supabase = createClient();

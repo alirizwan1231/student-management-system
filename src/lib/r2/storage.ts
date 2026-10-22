@@ -1,3 +1,4 @@
+import { baseName, mimeFor } from "@/lib/files/types";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { r2Client, R2_BUCKET } from "@/lib/r2/client";
@@ -12,7 +13,14 @@ export async function putObject(key: string, body: Buffer, contentType: string):
   );
 }
 export async function getSignedDownloadUrl(key: string, expiresInSeconds = 3600): Promise<string> {
-  const command = new GetObjectCommand({ Bucket: R2_BUCKET, Key: key });
+  const name = baseName(key);
+  const command = new GetObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+    // "inline" lets browsers and viewers show the file instead of forcing a download
+    ResponseContentDisposition: `inline; filename*=UTF-8''${encodeURIComponent(name)}`,
+    ResponseContentType: mimeFor(name),
+  });
   return getSignedUrl(r2Client, command, { expiresIn: expiresInSeconds });
 }
 export async function deleteObject(key: string): Promise<void> {
