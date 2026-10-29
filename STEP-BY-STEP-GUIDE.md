@@ -361,3 +361,20 @@ Code only — **no Supabase changes**. What changed:
    pending-join) now load as separate chunks after the core page; icon /
    date libraries are imported per-symbol (optimizePackageImports). The
    dashboard also skips pack requests entirely for groups you own.
+
+---
+
+# UPDATE — 30 Oct 2026 (v5.1): subject-notes picker fix + Task breakdown on top
+
+Code only — no Supabase changes.
+
+1. **Add Task → "Preparation notes" now finds the subject's notes.**
+   The picker originally searched only resources saved directly against
+   the subject, but notes made in the Notes flow hang off lectures
+   (their files carry the lecture id, not the subject id), so subjects
+   whose notes were lecture notes showed "no notes". It now lists direct
+   subject resources, every file attached to the subject's lecture
+   notes (labelled with the note it belongs to), and text-only notes
+   themselves (ticking one attaches a link that opens the note).
+2. **Task breakdown moved to the top of the dashboard**, right under the
+   four stat cards; the subjects widget stays lower on the page.

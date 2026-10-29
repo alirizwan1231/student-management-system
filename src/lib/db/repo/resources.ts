@@ -66,6 +66,93 @@ export function listResourcesForSubject(subjectId: string) {
     .toArray();
 }
 
+// One selectable entry in the Add Task form's "Preparation notes" list.
+// "Notes" in this app live in two places: files/links attached directly to
+// the subject (subject_id) AND the subject's lecture notes -- whose
+// attachments carry lecture_id only, with subject_id null. Querying
+// subject_id alone (the original bug) therefore showed an empty list for
+// any subject whose notes were made through the Notes flow.
+export interface SubjectNoteOption {
+  key: string; // "res:<resourceId>" or "lec:<lectureId>"
+  title: string;
+  badge: string; // resource type label, or "Note" for a text-only lecture note
+  detail: string | null; // e.g. "Note: Thermodynamics basics" / "Subject resource"
+  resourceId: string | null; // set: link this resource to the task on save
+  lectureId: string | null; // set (attachment-less note): save creates a link to the note page
+}
+
+const NOTE_OPTION_TYPE_LABEL: Record<string, string> = {
+  pdf: "PDF",
+  ppt: "Slides",
+  doc: "Document",
+  image: "Image",
+  link: "Link",
+  other: "File",
+};
+
+export async function listSubjectNoteOptions(subjectId: string): Promise<SubjectNoteOption[]> {
+  const [direct, lectures] = await Promise.all([
+    listResourcesForSubject(subjectId),
+    db.lectures
+      .where({ subject_id: subjectId })
+      .filter((l) => l.deleted_at === null)
+      .toArray()
+      .then((rows) => rows.sort((a, b) => (a.lecture_number ?? 0) - (b.lecture_number ?? 0))),
+  ]);
+
+  const lectureIds = lectures.map((l) => l.id);
+  const attachments = lectureIds.length
+    ? await db.resources.where("lecture_id").anyOf(lectureIds).filter((r) => r.deleted_at === null).toArray()
+    : [];
+  const attachmentsByLecture = new Map<string, Resource[]>();
+  for (const r of attachments) {
+    if (!r.lecture_id) continue;
+    const list = attachmentsByLecture.get(r.lecture_id) ?? [];
+    list.push(r);
+    attachmentsByLecture.set(r.lecture_id, list);
+  }
+  const seenResourceIds = new Set<string>(attachments.map((r) => r.id));
+
+  const options: SubjectNoteOption[] = [];
+  for (const lecture of lectures) {
+    const files = attachmentsByLecture.get(lecture.id) ?? [];
+    if (files.length === 0) {
+      // A note with no files is still a note: offer the note itself.
+      options.push({
+        key: `lec:${lecture.id}`,
+        title: lecture.title,
+        badge: "Note",
+        detail: lecture.lecture_number != null ? `Lecture ${lecture.lecture_number}` : "Subject note",
+        resourceId: null,
+        lectureId: lecture.id,
+      });
+    } else {
+      for (const file of files) {
+        options.push({
+          key: `res:${file.id}`,
+          title: file.title,
+          badge: NOTE_OPTION_TYPE_LABEL[file.resource_type] ?? "File",
+          detail: `From note: ${lecture.title}`,
+          resourceId: file.id,
+          lectureId: null,
+        });
+      }
+    }
+  }
+  for (const r of direct) {
+    if (seenResourceIds.has(r.id)) continue; // already listed via its lecture
+    options.push({
+      key: `res:${r.id}`,
+      title: r.title,
+      badge: NOTE_OPTION_TYPE_LABEL[r.resource_type] ?? "File",
+      detail: "Subject resource",
+      resourceId: r.id,
+      lectureId: null,
+    });
+  }
+  return options;
+}
+
 export function listResourcesForLecture(lectureId: string) {
   return db.resources
     .where({ lecture_id: lectureId })

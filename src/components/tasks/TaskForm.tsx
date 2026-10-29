@@ -19,20 +19,10 @@ import {
 import { taskSchema, type TaskInput } from "@/lib/validation/task";
 import { createTask } from "@/lib/db/repo/tasks";
 import { useAllSubjects } from "@/hooks/useSubjects";
-import { createResource, linkResourceToTask, listResourcesForSubject } from "@/lib/db/repo/resources";
+import { createResource, linkResourceToTask, listSubjectNoteOptions, type SubjectNoteOption } from "@/lib/db/repo/resources";
 import { queueFileUpload } from "@/lib/db/repo/pendingUploads";
 import { partitionValidFiles } from "@/lib/utils/fileGuard";
 import { inferResourceType } from "@/lib/utils/fileType";
-import type { Resource } from "@/types/academic";
-
-const NOTE_TYPE_LABEL: Record<string, string> = {
-  pdf: "PDF",
-  ppt: "Slides",
-  doc: "Document",
-  image: "Image",
-  link: "Link",
-  other: "File",
-};
 
 type FormValues = TaskInput & { subject_id?: string };
 
@@ -456,22 +446,25 @@ export function TaskForm({
   // attachments the moment the task is created. Everything is local-first,
   // so this works offline exactly like the rest of the form.
   const effectiveSubjectId = subjectId ?? subjectValue ?? "";
-  const [subjectNotes, setSubjectNotes] = useState<Resource[]>([]);
-  const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
+  const [noteOptions, setNoteOptions] = useState<SubjectNoteOption[]>([]);
+  const [selectedNoteKeys, setSelectedNoteKeys] = useState<string[]>([]);
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setSelectedNoteIds([]);
+    setSelectedNoteKeys([]);
     if (!effectiveSubjectId) {
-      setSubjectNotes([]);
+      setNoteOptions([]);
       return;
     }
     let cancelled = false;
-    listResourcesForSubject(effectiveSubjectId)
+    // Notes live both as direct subject resources and as lecture-note
+    // attachments -- listSubjectNoteOptions covers both (plus text-only
+    // notes), which is what the subject's Notes section actually shows.
+    listSubjectNoteOptions(effectiveSubjectId)
       .then((rows) => {
-        if (!cancelled) setSubjectNotes(rows);
+        if (!cancelled) setNoteOptions(rows);
       })
       .catch(() => undefined);
     return () => {
@@ -479,8 +472,8 @@ export function TaskForm({
     };
   }, [effectiveSubjectId]);
 
-  const toggleNote = (id: string) =>
-    setSelectedNoteIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const toggleNote = (key: string) =>
+    setSelectedNoteKeys((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
 
   const stageFiles = (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
@@ -503,8 +496,19 @@ export function TaskForm({
     // Attach the preparation notes: link the ticked existing notes to this
     // task (they stay in the subject too), and create + queue uploads for
     // the newly staged files. A single bad file must never lose the task.
-    for (const noteId of selectedNoteIds) {
-      await linkResourceToTask(noteId, task.id).catch(() => undefined);
+    // A ticked text-only note has no file to link, so the task gets a link
+    // entry that opens the note itself.
+    for (const opt of noteOptions.filter((o) => selectedNoteKeys.includes(o.key))) {
+      if (opt.resourceId) {
+        await linkResourceToTask(opt.resourceId, task.id).catch(() => undefined);
+      } else if (opt.lectureId) {
+        await createResource(userId, {
+          task_id: task.id,
+          title: opt.title,
+          url: `/notes/lecture/${opt.lectureId}`,
+          resource_type: "link",
+        }).catch(() => undefined);
+      }
     }
     for (const file of stagedFiles) {
       try {
@@ -519,7 +523,7 @@ export function TaskForm({
         /* the task is saved; the file can be attached later from the task page */
       }
     }
-    setSelectedNoteIds([]);
+    setSelectedNoteKeys([]);
     setStagedFiles([]);
     setFileError(null);
     reset({ task_type: "assignment", priority: "medium", subject_id: "", deadline: "" });
@@ -674,23 +678,26 @@ export function TaskForm({
             </p>
           ) : (
             <>
-              {subjectNotes.length > 0 ? (
+              {noteOptions.length > 0 ? (
                 <div className={`max-h-44 space-y-1 overflow-y-auto pr-1 ${hiddenScrollbar}`}>
-                  {subjectNotes.map((note) => {
-                    const checked = selectedNoteIds.includes(note.id);
+                  {noteOptions.map((note) => {
+                    const checked = selectedNoteKeys.includes(note.key);
                     return (
                       <label
-                        key={note.id}
+                        key={note.key}
                         className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-[13px] font-medium transition-colors ${
                           checked
                             ? "border-brand-300 bg-brand-50 text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200"
                             : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-white/[0.08] dark:text-slate-300 dark:hover:bg-white/[0.04]"
                         }`}
                       >
-                        <input type="checkbox" checked={checked} onChange={() => toggleNote(note.id)} className="h-4 w-4 shrink-0 accent-brand-600" />
-                        <span className="min-w-0 flex-1 truncate">{note.title}</span>
+                        <input type="checkbox" checked={checked} onChange={() => toggleNote(note.key)} className="h-4 w-4 shrink-0 accent-brand-600" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate">{note.title}</span>
+                          {note.detail && <span className="block truncate text-[11px] font-normal text-slate-400 dark:text-slate-500">{note.detail}</span>}
+                        </span>
                         <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-white/[0.07] dark:text-slate-400">
-                          {NOTE_TYPE_LABEL[note.resource_type] ?? "File"}
+                          {note.badge}
                         </span>
                       </label>
                     );
@@ -728,9 +735,9 @@ export function TaskForm({
                   </ul>
                 )}
                 {fileError && <p className={errorClass}>{fileError}</p>}
-                {(selectedNoteIds.length > 0 || stagedFiles.length > 0) && (
+                {(selectedNoteKeys.length > 0 || stagedFiles.length > 0) && (
                   <p className="mt-2 text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                    {selectedNoteIds.length + stagedFiles.length} note{selectedNoteIds.length + stagedFiles.length === 1 ? "" : "s"} will be attached to this task.
+                    {selectedNoteKeys.length + stagedFiles.length} note{selectedNoteKeys.length + stagedFiles.length === 1 ? "" : "s"} will be attached to this task.
                   </p>
                 )}
               </div>

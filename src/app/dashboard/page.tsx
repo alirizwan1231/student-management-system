@@ -72,6 +72,9 @@ const semesterHref = data.currentSemester ? `/semesters/${data.currentSemester.i
         <StatCard label="Upcoming" value={data.upcomingTotalCount} icon={CheckCircle2} href="/tasks?filter=upcoming" linkLabel="View" />
         <StatCard label="Overdue" value={data.overdueTasks.length} icon={ClipboardList} tone="overdue" href="/tasks?filter=overdue" linkLabel="View" />
       </div>
+      <div className="mb-6">
+        <AssignmentBreakdown {...data.taskBreakdown} />
+      </div>
       {data.overdueTasks.length > 0 && (
         <div className="mb-6"><OverdueTasks tasks={data.overdueTasks} /></div>
       )}
@@ -103,9 +106,8 @@ const semesterHref = data.currentSemester ? `/semesters/${data.currentSemester.i
       <div className="mb-6">
         <UpcomingList deadlines={data.upcomingDeadlines} totalCount={data.upcomingTotalCount} />
       </div>
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="mb-6">
         <SubjectsWidget subjects={data.subjects} semesterHref={semesterHref} />
-        <AssignmentBreakdown {...data.taskBreakdown} />
       </div>
       <RecentGroupActivity />
     </main>
