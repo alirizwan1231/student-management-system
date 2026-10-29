@@ -1,14 +1,19 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
 import { Topbar } from "./Topbar";
-import { InstallPrompt } from "@/components/pwa/InstallPrompt";
-import { ReminderManager } from "@/components/pwa/ReminderManager";
 import { UnsyncedBanner } from "@/components/sync/UnsyncedBanner";
 import { FileViewerHost } from "@/components/files/FileViewer";
-import { PendingJoinHandler } from "@/components/groups/PendingJoinHandler";
+
+// Non-critical background helpers: they only matter seconds after load
+// (install prompt, reminder checks, a pending group-join link), so they
+// load as separate chunks and stay out of the first bundle every page pays.
+const InstallPrompt = dynamic(() => import("@/components/pwa/InstallPrompt").then((m) => m.InstallPrompt), { ssr: false });
+const ReminderManager = dynamic(() => import("@/components/pwa/ReminderManager").then((m) => m.ReminderManager), { ssr: false });
+const PendingJoinHandler = dynamic(() => import("@/components/groups/PendingJoinHandler").then((m) => m.PendingJoinHandler), { ssr: false });
 
 const CHROME_LESS_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password", "/offline", "/auth/callback", "/auth/confirm", "/privacy", "/terms", "/contact", "/"];
 

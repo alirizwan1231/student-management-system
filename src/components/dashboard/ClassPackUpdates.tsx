@@ -42,6 +42,11 @@ function summarise(report: ImportReport): string {
 // one-click import. The import reuses the exact engine of the group page's
 // Class Pack tab -- unchanged items are skipped, changed items update, and
 // items you edited yourself are never overwritten.
+//
+// Groups YOU created (and packs you published yourself) are left out on
+// purpose: the pack is built from your own subjects, timetable, notes,
+// tasks and exams, so there is nothing for you to import -- every other
+// member still sees the import option as before.
 export function ClassPackUpdates({ userId }: { userId: string }) {
   const [states, setStates] = useState<PackState[] | null>(null);
   const [importingAll, setImportingAll] = useState(false);
@@ -49,6 +54,7 @@ export function ClassPackUpdates({ userId }: { userId: string }) {
   const loadOne = useCallback(async (groupId: string, groupName: string): Promise<PackState | null> => {
     const pack = await getClassPack(groupId).catch(() => null);
     if (!pack) return null;
+    if (pack.published_by === userId) return null; // my own pack: already my data
     const links = await readLinks(groupId).catch(() => null);
     return {
       groupId,
@@ -60,17 +66,20 @@ export function ClassPackUpdates({ userId }: { userId: string }) {
       message: null,
       error: null,
     };
-  }, []);
+  }, [userId]);
 
   const load = useCallback(async () => {
     try {
       const groups = await listMyGroups();
-      const rows = await Promise.all(groups.map((g) => loadOne(g.id, g.name).catch(() => null)));
+      // Skip groups I created before fetching anything: no import option
+      // (and no wasted requests) for the Admin's own groups.
+      const importable = groups.filter((g) => g.owner_id !== userId && g.role !== "owner");
+      const rows = await Promise.all(importable.map((g) => loadOne(g.id, g.name).catch(() => null)));
       setStates(rows.filter((r): r is PackState => r !== null));
     } catch {
       setStates([]);
     }
-  }, [loadOne]);
+  }, [loadOne, userId]);
 
   useEffect(() => {
     void load();

@@ -36,6 +36,12 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
+  experimental: {
+    // Ship only the icons / utilities actually used from these barrel
+    // packages instead of pulling the whole library into the first bundle.
+    optimizePackageImports: ["lucide-react", "date-fns", "recharts"],
+  },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],
   },

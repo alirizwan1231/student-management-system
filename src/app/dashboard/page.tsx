@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { BookOpen, CalendarClock, CheckCircle2, ClipboardList } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -7,7 +8,6 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { TodaySchedule } from "@/components/dashboard/TodaySchedule";
 import { WeekOverview } from "@/components/dashboard/WeekOverview";
 import { UpcomingList } from "@/components/dashboard/UpcomingList";
-import { RecentGroupActivity } from "@/components/dashboard/RecentGroupActivity";
 import { AssignmentBreakdown } from "@/components/dashboard/AssignmentBreakdown";
 import { SubjectsWidget } from "@/components/dashboard/SubjectsWidget";
 import { OverdueTasks } from "@/components/dashboard/OverdueTasks";
@@ -17,7 +17,14 @@ import { AddNotesButton } from "@/components/notes/AddNotesButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { NamePrompt } from "@/components/profile/NamePrompt";
 import { JoinClassCard } from "@/components/dashboard/JoinClassCard";
-import { ClassPackUpdates } from "@/components/dashboard/ClassPackUpdates";
+
+// Secondary, network-backed sections: they load as their own chunks after
+// the core dashboard (local data) is on screen, instead of blocking it.
+const ClassPackUpdates = dynamic(() => import("@/components/dashboard/ClassPackUpdates").then((m) => m.ClassPackUpdates), { ssr: false });
+const RecentGroupActivity = dynamic(() => import("@/components/dashboard/RecentGroupActivity").then((m) => m.RecentGroupActivity), {
+  ssr: false,
+  loading: () => <div className="h-32 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/[0.04]" />,
+});
 function greeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";

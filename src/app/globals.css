@@ -6,6 +6,20 @@ html, body {
   height: 100%;
 }
 
+/* Paint the page background on <html> itself, in the theme that ships in
+   the markup (dark by default), so not even the area outside <body> can
+   flash white before the app styles apply. color-scheme also keeps
+   native scrollbars and form controls in the right theme from frame one. */
+html {
+  background-color: #f8fafc;
+  color-scheme: light;
+}
+
+html.dark {
+  background-color: #020617;
+  color-scheme: dark;
+}
+
 /* Never let one wide element make the whole page scroll sideways. That is what makes
    phones zoom out and leaves a blank gap on the right. "clip" does not break sticky headers. */
 body {

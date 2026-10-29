@@ -44,6 +44,11 @@ export function ClassPackTab({ groupId, myRole }: { groupId: string; myRole: str
 
   if (!user || pack === undefined) return <div className="h-40 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/[0.04]" />;
 
+  // The group's creator -- and whoever published this pack -- already has
+  // every item in their own account (the pack is built FROM their data),
+  // so the import panel is hidden for them. Everyone else imports as usual.
+  const importIsMine = myRole === "owner" || (pack !== null && pack.published_by === user.id);
+
   return (
     <div>
       {error && <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600 dark:border-rose-500/15 dark:bg-rose-500/[0.06] dark:text-rose-400">{error}</p>}
@@ -53,7 +58,18 @@ export function ClassPackTab({ groupId, myRole }: { groupId: string; myRole: str
       {pack ? (
         <>
           <Attribution prefix="Published by" name={publisher?.name} avatarUrl={publisher?.avatar} userId={pack.published_by} date={pack.published_at} className="mb-3" />
-          <ImportPackPanel key={`${pack.version}`} userId={user.id} pack={pack} links={links} diff={diff} onImported={() => void loadLinks()} />
+          {importIsMine ? (
+            <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50 px-5 py-4 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
+              <p className="text-sm font-bold text-emerald-900 dark:text-emerald-200">This is your pack — nothing to import</p>
+              <p className="mt-1 text-xs leading-5 text-emerald-700 dark:text-emerald-300/80">
+                {myRole === "owner"
+                  ? "You created this group, and the class pack is made from your own subjects, timetable, notes, tasks and exams — they are already in your account. Import is only shown to the other members."
+                  : "You published this pack from your own data, so everything in it is already in your account. Import is only shown to the other members."}
+              </p>
+            </div>
+          ) : (
+            <ImportPackPanel key={`${pack.version}`} userId={user.id} pack={pack} links={links} diff={diff} onImported={() => void loadLinks()} />
+          )}
         </>
       ) : myRole === "" ? (
         // Role not resolved yet: don't flash the member message at the

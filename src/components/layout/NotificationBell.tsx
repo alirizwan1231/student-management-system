@@ -101,10 +101,19 @@ export function NotificationBell({ placement = "down", align = "right" }: { plac
 
       {open && (
         <div
+          role="dialog"
+          aria-label="Notifications"
           className={cn(
-            "absolute z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-white/[0.1] dark:bg-slate-900",
-            placement === "up" ? "bottom-full mb-2" : "top-full mt-2",
-            align === "right" ? "right-0" : "left-0"
+            // Mobile: a fixed panel pinned inside the viewport margins, so
+            // it can never slide half off-screen no matter where the bell
+            // sits in the header. Desktop (sm+): the anchored dropdown it
+            // has always been, next to the bell.
+            "fixed inset-x-3 z-50 flex max-h-[calc(100dvh-7.5rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-white/[0.1] dark:bg-slate-900",
+            "sm:absolute sm:inset-x-auto sm:max-h-none sm:w-80",
+            placement === "up"
+              ? "bottom-[5.25rem] sm:bottom-full sm:mb-2"
+              : "top-[4.25rem] sm:top-full sm:mt-2",
+            align === "right" ? "sm:right-0" : "sm:left-0"
           )}
         >
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-white/[0.06]">
@@ -115,7 +124,7 @@ export function NotificationBell({ placement = "down", align = "right" }: { plac
               </button>
             )}
           </div>
-          <ul className="max-h-96 overflow-y-auto">
+          <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain sm:max-h-96">
             {items.length === 0 ? (
               <li className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500">
                 {loaded ? "Nothing yet. Activity from your study groups will show up here." : "Loading..."}

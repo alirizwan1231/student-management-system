@@ -335,3 +335,29 @@ Two features requested by Finn. **Code only — no Supabase changes needed**
 
 Deploy the same way as v3 (replace files, keep your real .env.local,
 npm install, npm run build, push/vercel --prod).
+
+---
+
+# UPDATE — 30 Oct 2026 (v5): owner import hidden, mobile notifications, dark-by-default, speed
+
+Code only — **no Supabase changes**. What changed:
+
+1. **No import option for your own pack.** The dashboard "Class Pack
+   updates" card no longer lists groups you created, and packs you
+   published yourself are skipped — the pack is built from your data, so
+   there is nothing to import. In a group's Class Pack tab, the creator /
+   publisher sees a "This is your pack — nothing to import" note instead
+   of the import panel. All other members still import exactly as before.
+2. **Notifications panel on mobile.** It is now a fixed panel inside the
+   screen margins (never half off-screen), height-capped with its own
+   scroll; on desktop it stays the anchored dropdown next to the bell.
+3. **Dark theme by default, no white flash.** The app ships dark: the
+   server renders the dark theme and a tiny inline script keeps it unless
+   a light preference was saved. Existing users who chose light keep
+   light; everyone else gets dark, including first paint on refresh and
+   the login screen.
+4. **Speed.** The Add Task form, the dashboard's Class Pack / recent
+   activity sections, and background helpers (install prompt, reminders,
+   pending-join) now load as separate chunks after the core page; icon /
+   date libraries are imported per-symbol (optimizePackageImports). The
+   dashboard also skips pack requests entirely for groups you own.

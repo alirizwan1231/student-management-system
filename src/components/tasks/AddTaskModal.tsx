@@ -1,9 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Modal } from "@/components/ui/Modal";
-import { TaskForm } from "@/components/tasks/TaskForm";
 import { cn } from "@/lib/utils/cn";
+
+// The task form is one of the heaviest components in the app (form engine,
+// validation, file staging). It is only needed after the user taps
+// "Add task", so it loads as its own chunk on first open instead of riding
+// in the initial bundle of every page that shows this button.
+const TaskForm = dynamic(() => import("@/components/tasks/TaskForm").then((m) => m.TaskForm), {
+  ssr: false,
+  loading: () => <p className="py-10 text-center text-sm text-slate-400 dark:text-slate-500">Loading form...</p>,
+});
 
 export function AddTaskModal({
   userId,
