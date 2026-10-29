@@ -303,3 +303,35 @@ Requested by Finn after Part 1. **Migration 028 is ALREADY RUN in Supabase**
 ## Deliberately NOT done (your call, 29 Oct 2026)
 - Email verification / Resend / "Confirm email" — left exactly as-is for
   now; set up later. Parts 2–4 of this guide stay paused until you say so.
+
+---
+
+# UPDATE — 29 Oct 2026 (v4): Task notes + Dashboard Class Pack button
+
+Two features requested by Finn. **Code only — no Supabase changes needed**
+(no new migration; both features reuse existing tables and functions).
+
+## 1. Notes inside the Add Task form ("Preparation notes")
+- A new section in the Add Task form (between Schedule and Description).
+- Pick the subject first: all of that subject's existing notes/resources
+  appear as a tick-list. Ticked notes are LINKED to the new task
+  (resources.task_id) — they stay in the subject's notes as well and show
+  up in the task's Attachments.
+- "Upload new notes" stages files in the form; on save they are created
+  as task attachments and queued for upload (offline-safe, same upload
+  queue as everywhere else). Everything is local-first, so it works
+  offline and syncs later.
+
+## 2. "Class Pack updates" section on the main Dashboard
+- A dedicated card at the top of the dashboard listing every group that
+  has a published class pack: pack version vs your imported version,
+  counts of NEW and UPDATED items since your last import (or
+  "You're up to date").
+- One-click "Import updates" per group, plus "Import all updates".
+- It reuses the group tab's import engine exactly: unchanged items are
+  skipped, changed items update, and items you edited yourself are never
+  overwritten (they are reported as kept). If no group has a pack, the
+  card stays hidden.
+
+Deploy the same way as v3 (replace files, keep your real .env.local,
+npm install, npm run build, push/vercel --prod).

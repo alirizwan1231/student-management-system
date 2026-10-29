@@ -19,6 +19,20 @@ import {
 import { taskSchema, type TaskInput } from "@/lib/validation/task";
 import { createTask } from "@/lib/db/repo/tasks";
 import { useAllSubjects } from "@/hooks/useSubjects";
+import { createResource, linkResourceToTask, listResourcesForSubject } from "@/lib/db/repo/resources";
+import { queueFileUpload } from "@/lib/db/repo/pendingUploads";
+import { partitionValidFiles } from "@/lib/utils/fileGuard";
+import { inferResourceType } from "@/lib/utils/fileType";
+import type { Resource } from "@/types/academic";
+
+const NOTE_TYPE_LABEL: Record<string, string> = {
+  pdf: "PDF",
+  ppt: "Slides",
+  doc: "Document",
+  image: "Image",
+  link: "Link",
+  other: "File",
+};
 
 type FormValues = TaskInput & { subject_id?: string };
 
@@ -437,6 +451,45 @@ export function TaskForm({
   const subjectValue = watch("subject_id");
   const deadlineValue = watch("deadline");
 
+  // Preparation notes: the chosen subject's existing notes (tick to link
+  // them to this task) plus new files staged here and uploaded as task
+  // attachments the moment the task is created. Everything is local-first,
+  // so this works offline exactly like the rest of the form.
+  const effectiveSubjectId = subjectId ?? subjectValue ?? "";
+  const [subjectNotes, setSubjectNotes] = useState<Resource[]>([]);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setSelectedNoteIds([]);
+    if (!effectiveSubjectId) {
+      setSubjectNotes([]);
+      return;
+    }
+    let cancelled = false;
+    listResourcesForSubject(effectiveSubjectId)
+      .then((rows) => {
+        if (!cancelled) setSubjectNotes(rows);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveSubjectId]);
+
+  const toggleNote = (id: string) =>
+    setSelectedNoteIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const stageFiles = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const { valid, errors } = partitionValidFiles(Array.from(fileList));
+    setFileError(errors.length ? errors.join(" ") : null);
+    if (valid.length) setStagedFiles((prev) => [...prev, ...valid]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const onSubmit = async (values: FormValues) => {
     const targetSubjectId = subjectId ?? values.subject_id;
     // Fix 11 (audit M-5): NEVER fail silently. This used to `return` with no
@@ -446,7 +499,29 @@ export function TaskForm({
       setFocus("subject_id");
       return;
     }
-    await createTask(userId, { ...values, subject_id: targetSubjectId });
+    const task = await createTask(userId, { ...values, subject_id: targetSubjectId });
+    // Attach the preparation notes: link the ticked existing notes to this
+    // task (they stay in the subject too), and create + queue uploads for
+    // the newly staged files. A single bad file must never lose the task.
+    for (const noteId of selectedNoteIds) {
+      await linkResourceToTask(noteId, task.id).catch(() => undefined);
+    }
+    for (const file of stagedFiles) {
+      try {
+        const resource = await createResource(userId, {
+          subject_id: targetSubjectId,
+          task_id: task.id,
+          title: file.name,
+          resource_type: inferResourceType(file.name),
+        });
+        await queueFileUpload(userId, resource.id, file);
+      } catch {
+        /* the task is saved; the file can be attached later from the task page */
+      }
+    }
+    setSelectedNoteIds([]);
+    setStagedFiles([]);
+    setFileError(null);
     reset({ task_type: "assignment", priority: "medium", subject_id: "", deadline: "" });
     onCreated?.();
   };
@@ -569,6 +644,98 @@ export function TaskForm({
               {errors.marks && <p className={errorClass}>{errors.marks.message}</p>}
             </div>
           </div>
+        </section>
+
+        {/* Preparation notes */}
+        <section>
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                <path
+                  d="M21 12.5l-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8L13 4.9a3.7 3.7 0 0 1 5.2 5.2l-8.2 8.2a1.85 1.85 0 0 1-2.6-2.6l7.4-7.4"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Preparation notes</h3>
+              <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                Attach the notes you need for this task — pick from the subject&apos;s notes or upload new ones.
+              </p>
+            </div>
+          </div>
+
+          {!effectiveSubjectId ? (
+            <p className="rounded-xl border border-dashed border-slate-200 px-3.5 py-3 text-xs text-slate-400 dark:border-white/[0.09] dark:text-slate-500">
+              Select a subject first — its existing notes will appear here to choose from.
+            </p>
+          ) : (
+            <>
+              {subjectNotes.length > 0 ? (
+                <div className={`max-h-44 space-y-1 overflow-y-auto pr-1 ${hiddenScrollbar}`}>
+                  {subjectNotes.map((note) => {
+                    const checked = selectedNoteIds.includes(note.id);
+                    return (
+                      <label
+                        key={note.id}
+                        className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-[13px] font-medium transition-colors ${
+                          checked
+                            ? "border-brand-300 bg-brand-50 text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200"
+                            : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-white/[0.08] dark:text-slate-300 dark:hover:bg-white/[0.04]"
+                        }`}
+                      >
+                        <input type="checkbox" checked={checked} onChange={() => toggleNote(note.id)} className="h-4 w-4 shrink-0 accent-brand-600" />
+                        <span className="min-w-0 flex-1 truncate">{note.title}</span>
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-white/[0.07] dark:text-slate-400">
+                          {NOTE_TYPE_LABEL[note.resource_type] ?? "File"}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 dark:text-slate-500">No notes for this subject yet — upload the first one below.</p>
+              )}
+
+              <div className="mt-3">
+                <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => stageFiles(e.target.files)} />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/[0.1] dark:text-slate-200 dark:hover:bg-white/[0.05]"
+                >
+                  <span className="text-sm leading-none">+</span> Upload new notes
+                </button>
+                {stagedFiles.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {stagedFiles.map((file, i) => (
+                      <li key={`${file.name}-${i}`} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 dark:bg-white/[0.04] dark:text-slate-300">
+                        <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                        <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">New</span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${file.name}`}
+                          onClick={() => setStagedFiles((prev) => prev.filter((_, j) => j !== i))}
+                          className="shrink-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        >
+                          ✕
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {fileError && <p className={errorClass}>{fileError}</p>}
+                {(selectedNoteIds.length > 0 || stagedFiles.length > 0) && (
+                  <p className="mt-2 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                    {selectedNoteIds.length + stagedFiles.length} note{selectedNoteIds.length + stagedFiles.length === 1 ? "" : "s"} will be attached to this task.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
         </section>
 
         {/* Description */}

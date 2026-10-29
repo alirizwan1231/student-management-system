@@ -33,6 +33,17 @@ export async function createResource(userId: string, input: CreateResourceInput)
   return resource;
 }
 
+// Link an existing note/resource to a task (or unlink with null) without
+// moving it: the resource keeps its subject_id, so it stays in the
+// subject's notes AND appears in the task's attachments.
+export async function linkResourceToTask(resourceId: string, taskId: string | null) {
+  const updated_at = nowIso();
+  await db.resources.update(resourceId, { task_id: taskId, updated_at });
+  const record = await db.resources.get(resourceId);
+  if (record) await enqueueChange("resources", resourceId, "update", record);
+  return record;
+}
+
 export async function attachStoragePath(resourceId: string, storagePath: string) {
   const updated_at = nowIso();
   await db.resources.update(resourceId, { storage_path: storagePath, updated_at });

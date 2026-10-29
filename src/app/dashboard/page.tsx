@@ -17,6 +17,7 @@ import { AddNotesButton } from "@/components/notes/AddNotesButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { NamePrompt } from "@/components/profile/NamePrompt";
 import { JoinClassCard } from "@/components/dashboard/JoinClassCard";
+import { ClassPackUpdates } from "@/components/dashboard/ClassPackUpdates";
 function greeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -46,6 +47,7 @@ const semesterHref = data.currentSemester ? `/semesters/${data.currentSemester.i
     <main className="mx-auto max-w-6xl p-4 sm:p-6">
       <NamePrompt />
       <JoinClassCard />
+      <ClassPackUpdates userId={user.id} />
       <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold text-slate-900 dark:text-slate-50">{greeting()}</h1>
