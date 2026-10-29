@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your sign-in code</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">Your sign-in code is {{ .Token }}</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f1f5f9;padding:32px 12px"><tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<tr><td align="center" style="padding:0 0 20px"><table role="presentation" cellspacing="0" cellpadding="0"><tr>
+<td style="background:#3366ff;border-radius:12px;width:40px;height:40px;text-align:center;font-size:22px;line-height:40px">&#127891;</td>
+<td style="padding-left:10px;font-size:18px;font-weight:700;color:#0f172a">University Manager</td></tr></table></td></tr>
+<tr><td style="background:#ffffff;border-radius:20px;border:1px solid #e2e8f0;padding:36px 32px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+<tr><td style="font-size:22px;line-height:30px;font-weight:700;color:#0f172a;padding:0 0 12px;text-align:center">Your sign-in code</td></tr>
+<tr><td style="font-size:15px;line-height:24px;color:#475569;padding:0 0 24px;text-align:center">Enter this code in the app to sign in. It expires in 1 hour and can be used once.</td></tr>
+<tr><td align="center" style="padding:4px 0 24px"><div style="display:inline-block;background:#f1f5ff;border:1px solid #dbe5ff;border-radius:14px;padding:16px 28px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:34px;font-weight:700;letter-spacing:10px;color:#1d3fb8">{{ .Token }}</div></td></tr>
+</table></td></tr>
+<tr><td style="padding:20px 12px 0;font-size:12px;line-height:18px;color:#94a3b8;text-align:center">Never share this code with anyone. We will never ask for it.<br>You received this email because of activity on your University Manager account ({{ .Email }}).<br>&copy; University Manager</td></tr>
+</table></td></tr></table></body></html>

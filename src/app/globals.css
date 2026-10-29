@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  height: 100%;
+}
+
+/* Never let one wide element make the whole page scroll sideways. That is what makes
+   phones zoom out and leaves a blank gap on the right. "clip" does not break sticky headers. */
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+/* Smooth color transition when the dark-mode toggle flips the class on
+   <html>, rather than an abrupt flash. */
+body {
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+/* Self-hosted fonts (fontsource) - no Google Fonts request at build time, works offline */
+:root {
+  --font-body: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Plus Jakarta Sans Variable", "Inter Variable", system-ui, sans-serif;
+}
