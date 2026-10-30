@@ -417,3 +417,29 @@ Code only — no Supabase changes. Tasks can now be edited after creation:
   listed under "Also attached to this task" and can be removed there
   (detach if the file also lives in a subject/note, delete if the task
   was its only home). All changes apply on "Save changes".
+
+---
+
+# UPDATE — 30 Oct 2026 (v5.4): every task note travels in the Class Pack
+
+Code only — no Supabase changes. Verified against the live published pack
+first: task files DO flow since v5.2 (pack v7, published 30 Oct 14:20 PKT,
+carries real PDF files for 3 of its 4 tasks). Two remaining ways a task's
+notes could still fail to arrive in other accounts are fixed here:
+
+- **Text-only notes ticked onto a task:** the attachment used to be the
+  publisher's internal note link (`/notes/lecture/<id>`), which does not
+  exist in anyone else's account. Such attachments are now packed as a
+  note reference and re-pointed at import time to the importer's own
+  imported copy of that note. Imports also repair the broken link an
+  older pack may already have planted (same title, wrong-account link ->
+  replaced with the correct local link).
+- **Notes the publisher had themselves imported from another group's
+  pack:** these used to be silently skipped when re-publishing. They are
+  now included; the publish endpoint copies them only when the publisher
+  is a member of the source group (they could already download the file
+  there, so nothing new is exposed).
+
+Still true by design: a file that is still uploading when the pack is
+published cannot be included (the publish panel reports how many files
+were skipped) — wait for uploads to finish, then publish again.

@@ -26,7 +26,7 @@ export async function publishWithFiles(groupId: string, title: string, payload: 
   let skippedFiles = 0;
   const remapFiles = (files: PackFile[]): PackFile[] =>
     files.flatMap((f) => {
-      if (f.url) return [f];
+      if (f.url || f.note_key) return [f]; // web links and note references need no file copy
       const mapped = f.pack_path ? mapping.get(f.pack_path) : undefined;
       if (!mapped) {
         skippedFiles += 1;

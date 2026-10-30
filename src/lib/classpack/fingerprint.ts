@@ -53,7 +53,7 @@ const slotsSig = (slots: PackSlot[]) => JSON.stringify(slots.map((s) => `${s.day
 
 export const packHash = {
   subject: (s: PackSubject) => hashString(JSON.stringify([subjectCore(s), txt(s.instructor), slotsSig(s.slots)])),
-  note: (n: PackNote) => hashString(JSON.stringify([noteCore(n), n.files.map((f) => `${f.title}|${f.url ?? ""}|${f.pack_path ?? ""}`)])),
-  task: (t: PackTask) => hashString(JSON.stringify([taskCore(t), (t.files ?? []).map((f) => `${f.title}|${f.url ?? ""}|${f.pack_path ?? ""}`)])),
+  note: (n: PackNote) => hashString(JSON.stringify([noteCore(n), n.files.map((f) => `${f.title}|${f.url ?? ""}|${f.pack_path ?? ""}|${f.note_key ?? ""}`)])),
+  task: (t: PackTask) => hashString(JSON.stringify([taskCore(t), (t.files ?? []).map((f) => `${f.title}|${f.url ?? ""}|${f.pack_path ?? ""}|${f.note_key ?? ""}`)])),
   exam: (e: PackExam) => fp(examCore(e)),
 };

@@ -14,6 +14,7 @@ export interface PackFile {
   resource_type: ResourceType;
   url: string | null; // a web link
   pack_path: string | null; // while building: the publisher's own file path. In a published pack: the group's shared copy
+  note_key?: string | null; // the task's attachment IS one of the pack's lecture notes: this is that note's pack key, so the importer can point the attachment at their own imported copy of the note (internal /notes/lecture/<id> links are only valid in the publisher's account)
 }
 
 export interface PackNote {

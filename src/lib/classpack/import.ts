@@ -6,7 +6,7 @@ import { findOrCreateLecturer } from "@/lib/db/repo/lecturers";
 import { createLecture, updateLecture } from "@/lib/db/repo/lectures";
 import { createTask, updateTask } from "@/lib/db/repo/tasks";
 import { createExam, updateExam } from "@/lib/db/repo/exams";
-import { attachStoragePath, createResource } from "@/lib/db/repo/resources";
+import { attachStoragePath, createResource, deleteResource } from "@/lib/db/repo/resources";
 import { exactSubjectMatch } from "@/lib/classpack/match";
 import { examCore, fp, noteCore, packHash, subjectCore, taskCore } from "@/lib/classpack/fingerprint";
 import { readLinks, writeLinks, type PackLinks } from "@/lib/classpack/links";
@@ -32,12 +32,37 @@ async function attachFiles(userId: string, groupId: string, subjectId: string, l
 
 // Same as attachFiles, but for a task's own notes/attachments: the imported
 // copies hang off the imported task (and its subject), exactly like the
-// publisher's originals.
-async function attachTaskFiles(userId: string, groupId: string, subjectId: string, taskId: string, files: PackFile[]): Promise<number> {
+// publisher's originals. A file can also be a reference to one of the
+// pack's lecture notes (note_key): the attachment then becomes a link to
+// THIS account's imported copy of that note -- the publisher's internal
+// note URL would point at a note that does not exist here. Notes are
+// imported before tasks, so their links are already known at this point.
+async function attachTaskFiles(userId: string, groupId: string, subjectId: string, taskId: string, files: PackFile[], links: PackLinks): Promise<number> {
   const have = await db.resources.where({ user_id: userId }).filter((r) => r.deleted_at === null && r.task_id === taskId).toArray();
   const titles = new Set(have.map((r) => norm(r.title)));
   let added = 0;
   for (const f of files) {
+    if (f.note_key) {
+      const noteLink = links.items[f.note_key];
+      if (noteLink?.kind !== "note") continue; // the note itself was not imported: nothing valid to point at
+      const wantUrl = `/notes/lecture/${noteLink.localId}`;
+      const dupe = have.find((r) => norm(r.title) === norm(f.title));
+      if (dupe) {
+        // Packs published before note references existed saved this
+        // attachment as a link into the PUBLISHER's account, which can
+        // never open here -- replace it with the correct local link.
+        // Anything else with the same title is already attached: keep it.
+        if (dupe.resource_type === "link" && dupe.url && dupe.url !== wantUrl && dupe.url.startsWith("/notes/lecture/")) {
+          await deleteResource(dupe.id).catch(() => undefined);
+        } else {
+          continue;
+        }
+      }
+      await createResource(userId, { task_id: taskId, title: f.title, url: wantUrl, resource_type: "link" });
+      titles.add(norm(f.title));
+      added += 1;
+      continue;
+    }
     if (titles.has(norm(f.title))) continue;
     const res = await createResource(userId, { subject_id: subjectId, task_id: taskId, title: f.title, url: f.url, resource_type: f.resource_type });
     if (!f.url && f.pack_path) await attachStoragePath(res.id, `pack:${groupId}:${f.pack_path}`);
@@ -252,7 +277,7 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
             // branch also means "files may have changed": (re)attach any
             // that are missing -- this is what repairs tasks imported by
             // older versions, whose attachments never made it across.
-            report.filesAdded += await attachTaskFiles(userId, groupId, subjectId, task.id, t.files ?? []);
+            report.filesAdded += await attachTaskFiles(userId, groupId, subjectId, task.id, t.files ?? [], links);
             report.itemsUpdated += 1;
           } else {
             report.tasksExisting += 1;
@@ -263,7 +288,7 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
             created?.id ??
             (await db.tasks.where({ user_id: userId }).filter((x) => x.deleted_at === null && x.subject_id === subjectId && norm(x.title) === norm(t.title)).last())?.id;
           report.tasksAdded += 1;
-          if (taskId) report.filesAdded += await attachTaskFiles(userId, groupId, subjectId, taskId, t.files ?? []);
+          if (taskId) report.filesAdded += await attachTaskFiles(userId, groupId, subjectId, taskId, t.files ?? [], links);
         }
         const fresh = taskId ? await db.tasks.get(taskId) : undefined;
         if (fresh) {

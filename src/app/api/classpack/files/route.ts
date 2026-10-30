@@ -26,9 +26,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Only the owner or moderators can publish a class pack" }, { status: 403 });
   }
 
+  // A source file may also be another group's pack copy, when the
+  // publisher imported a note there and is now re-sharing it (e.g. attached
+  // to one of their tasks). That is only allowed when the publisher is a
+  // member of the source group -- they can already download the file from
+  // that group, so copying it into their own pack exposes nothing new.
+  const sourceGroupIds = new Map<string, boolean>();
+  const isAllowedSource = async (sourcePath: string): Promise<boolean> => {
+    if (isOwnedPath(sourcePath, user.id)) return true;
+    const m = sourcePath.match(/^packs\/([0-9a-f-]{36})\//i);
+    if (!m) return false;
+    if (!sourceGroupIds.has(m[1])) {
+      const { data: srcMember } = await supabase.from("group_members").select("user_id").eq("group_id", m[1]).eq("user_id", user.id).maybeSingle();
+      sourceGroupIds.set(m[1], Boolean(srcMember));
+    }
+    return sourceGroupIds.get(m[1]) ?? false;
+  };
+
   const results: { sourcePath: string; packPath?: string; error?: string }[] = [];
   for (const file of body.files) {
-    if (typeof file.sourcePath !== "string" || !isOwnedPath(file.sourcePath, user.id) || file.sourcePath.includes("..")) {
+    if (typeof file.sourcePath !== "string" || file.sourcePath.includes("..") || !(await isAllowedSource(file.sourcePath))) {
       results.push({ sourcePath: String(file.sourcePath), error: "Not your file" });
       continue;
     }

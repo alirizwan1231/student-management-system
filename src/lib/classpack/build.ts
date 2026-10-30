@@ -28,10 +28,29 @@ export async function buildPack(userId: string, semesterId: string): Promise<Bui
   // A resource becomes a pack file when it is a web link, or when its file
   // is fully uploaded under the publisher's own "users/" path. Anything
   // else (still uploading, or itself an imported pack copy) is skipped.
-  const toPackFiles = (rs: Resource[]): PackFile[] =>
+  // A task attachment can also be an internal link to one of the subject's
+  // own lecture notes (created when a text-only note is ticked in the Add
+  // Task form): that URL only exists in the publisher's account, so it is
+  // packed as a note_key reference instead and re-pointed at import time.
+  const toPackFiles = (rs: Resource[], noteIds?: Set<string>): PackFile[] =>
     rs.flatMap((r): PackFile[] => {
-      if (r.url) return [{ title: r.title, resource_type: r.resource_type, url: r.url, pack_path: null }];
+      if (r.url) {
+        const noteMatch = r.url.match(/^\/notes\/lecture\/(.+)$/);
+        if (noteMatch) {
+          if (noteIds?.has(noteMatch[1])) return [{ title: r.title, resource_type: "link", url: null, pack_path: null, note_key: noteMatch[1] }];
+          skippedFiles += 1; // points at a note that is not part of this pack
+          return [];
+        }
+        return [{ title: r.title, resource_type: r.resource_type, url: r.url, pack_path: null }];
+      }
       if (r.storage_path && r.storage_path.startsWith("users/")) return [{ title: r.title, resource_type: r.resource_type, url: null, pack_path: r.storage_path }];
+      // A file the publisher themselves imported from another group's pack
+      // (stored as "pack:<groupId>:<path>"): include it too, so a note
+      // attached to a task travels onward instead of being silently
+      // dropped. The publish endpoint re-checks that the publisher belongs
+      // to the source group before copying it.
+      const packCopy = r.storage_path?.match(/^pack:[^:]+:(packs\/.+)$/);
+      if (packCopy) return [{ title: r.title, resource_type: r.resource_type, url: null, pack_path: packCopy[1] }];
       skippedFiles += 1;
       return [];
     });
@@ -40,6 +59,7 @@ export async function buildPack(userId: string, semesterId: string): Promise<Bui
   for (const s of subjects) {
     let instructor = s.lecturer_name?.trim() || null;
     if (!instructor && s.lecturer_id) instructor = (await db.lecturers.get(s.lecturer_id))?.name?.trim() || null;
+    const subjectNoteIds = new Set(lectures.filter((l) => l.subject_id === s.id).map((l) => l.id));
 
     out.push({
       key: s.id,
@@ -79,7 +99,7 @@ export async function buildPack(userId: string, semesterId: string): Promise<Bui
           // The task's own notes/attachments (Preparation notes, uploads) --
           // these used to be left out of the pack entirely, so imported
           // tasks arrived without their notes.
-          files: toPackFiles(resources.filter((r) => r.task_id === t.id)),
+          files: toPackFiles(resources.filter((r) => r.task_id === t.id), subjectNoteIds),
         })),
       exams: exams
         .filter((e) => e.subject_id === s.id)
