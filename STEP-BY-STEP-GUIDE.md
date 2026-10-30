@@ -399,3 +399,21 @@ notes had files). Now:
 again from the original account (new version), then press "Import
 updates" in the other account — the missing attachments are added to
 the existing tasks; nothing is duplicated.
+
+---
+
+# UPDATE — 30 Oct 2026 (v5.3): task editing
+
+Code only — no Supabase changes. Tasks can now be edited after creation:
+
+- **Edit button** on the task detail page (next to Share/Delete) and on
+  every task row in the Tasks list and subject task lists.
+- The edit form is the Add Task form prefilled: title, type, priority,
+  subject, deadline and marks can all change and save in place.
+- **Notes:** notes already attached are pre-ticked in the Preparation
+  notes picker — untick to detach (the note stays in the subject), tick
+  more subject notes to add them, and upload brand-new files the same
+  way as when creating. Files that were added straight to the task are
+  listed under "Also attached to this task" and can be removed there
+  (detach if the file also lives in a subject/note, delete if the task
+  was its only home). All changes apply on "Save changes".

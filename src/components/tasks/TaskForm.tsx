@@ -17,9 +17,10 @@ import {
   subMonths,
 } from "date-fns";
 import { taskSchema, type TaskInput } from "@/lib/validation/task";
-import { createTask } from "@/lib/db/repo/tasks";
+import { createTask, updateTask } from "@/lib/db/repo/tasks";
 import { useAllSubjects } from "@/hooks/useSubjects";
-import { createResource, linkResourceToTask, listSubjectNoteOptions, type SubjectNoteOption } from "@/lib/db/repo/resources";
+import { createResource, deleteResource, linkResourceToTask, listResourcesForTask, listSubjectNoteOptions, type SubjectNoteOption } from "@/lib/db/repo/resources";
+import type { AcademicTask, Resource } from "@/types/academic";
 import { queueFileUpload } from "@/lib/db/repo/pendingUploads";
 import { partitionValidFiles } from "@/lib/utils/fileGuard";
 import { inferResourceType } from "@/lib/utils/fileType";
@@ -413,12 +414,17 @@ function CustomDateTimePicker({ value, onChange }: { value?: string; onChange: (
 export function TaskForm({
   userId,
   subjectId,
+  task,
   onCreated,
+  onSaved,
 }: {
   userId: string;
   subjectId?: string;
+  task?: AcademicTask; // when set, the form edits this task instead of creating a new one
   onCreated?: () => void;
+  onSaved?: () => void;
 }) {
+  const isEdit = Boolean(task);
   const showSubjectPicker = !subjectId;
   const subjects = useAllSubjects(showSubjectPicker ? userId : undefined);
 
@@ -433,7 +439,17 @@ export function TaskForm({
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(taskSchema),
-    defaultValues: { task_type: "assignment", priority: "medium", subject_id: "", deadline: "" },
+    defaultValues: task
+      ? {
+          title: task.title,
+          description: task.description ?? "",
+          task_type: task.task_type,
+          priority: task.priority,
+          subject_id: task.subject_id,
+          deadline: task.deadline ?? "",
+          marks: task.marks ?? undefined,
+        }
+      : { task_type: "assignment", priority: "medium", subject_id: "", deadline: "" },
   });
 
   const taskType = watch("task_type");
@@ -447,15 +463,26 @@ export function TaskForm({
   // so this works offline exactly like the rest of the form.
   const effectiveSubjectId = subjectId ?? subjectValue ?? "";
   const [noteOptions, setNoteOptions] = useState<SubjectNoteOption[]>([]);
+  const [optionsSubjectId, setOptionsSubjectId] = useState("");
   const [selectedNoteKeys, setSelectedNoteKeys] = useState<string[]>([]);
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Edit mode only: what is already attached to the task when the form
+  // opens. Representable attachments (subject notes/files) are pre-ticked
+  // in the picker; task-only files are listed separately with a remove
+  // option that applies on save.
+  const [initialAttachments, setInitialAttachments] = useState<Resource[]>([]);
+  const [attachmentsLoaded, setAttachmentsLoaded] = useState(false);
+  const [preTickApplied, setPreTickApplied] = useState(false);
+  const [removeAttachmentIds, setRemoveAttachmentIds] = useState<string[]>([]);
+
   useEffect(() => {
-    setSelectedNoteKeys([]);
+    if (!isEdit) setSelectedNoteKeys([]);
     if (!effectiveSubjectId) {
       setNoteOptions([]);
+      setOptionsSubjectId("");
       return;
     }
     let cancelled = false;
@@ -464,13 +491,62 @@ export function TaskForm({
     // notes), which is what the subject's Notes section actually shows.
     listSubjectNoteOptions(effectiveSubjectId)
       .then((rows) => {
-        if (!cancelled) setNoteOptions(rows);
+        if (!cancelled) {
+          setNoteOptions(rows);
+          setOptionsSubjectId(effectiveSubjectId);
+        }
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [effectiveSubjectId]);
+  }, [effectiveSubjectId, isEdit]);
+
+  useEffect(() => {
+    if (!task) return;
+    let cancelled = false;
+    listResourcesForTask(task.id)
+      .then((rows) => {
+        if (!cancelled) {
+          setInitialAttachments(rows);
+          setAttachmentsLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAttachmentsLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [task]);
+
+  // Pre-tick the picker with the notes already attached to this task --
+  // once, for the task's own subject, after both lists have loaded.
+  useEffect(() => {
+    if (!task || preTickApplied || !attachmentsLoaded) return;
+    if (optionsSubjectId !== task.subject_id) return;
+    const keys: string[] = [];
+    for (const opt of noteOptions) {
+      if (opt.resourceId && initialAttachments.some((r) => r.id === opt.resourceId)) keys.push(opt.key);
+      if (opt.lectureId && initialAttachments.some((r) => r.url === `/notes/lecture/${opt.lectureId}`)) keys.push(opt.key);
+    }
+    if (keys.length) setSelectedNoteKeys((prev) => Array.from(new Set([...prev, ...keys])));
+    setPreTickApplied(true);
+  }, [task, preTickApplied, attachmentsLoaded, optionsSubjectId, noteOptions, initialAttachments]);
+
+  // Attachments the picker cannot represent (files added straight to the
+  // task, e.g. from the task page): shown as removable chips in edit mode.
+  const representedResourceIds = new Set(noteOptions.map((o) => o.resourceId).filter((x): x is string => Boolean(x)));
+  const representedLectureIds = new Set(noteOptions.map((o) => o.lectureId).filter((x): x is string => Boolean(x)));
+  const otherAttachments =
+    isEdit && preTickApplied
+      ? initialAttachments.filter((r) => {
+          if (representedResourceIds.has(r.id)) return false;
+          const m = r.url?.match(/^\/notes\/lecture\/(.+)$/);
+          if (m && representedLectureIds.has(m[1])) return false;
+          return true;
+        })
+      : [];
 
   const toggleNote = (key: string) =>
     setSelectedNoteKeys((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
@@ -492,18 +568,63 @@ export function TaskForm({
       setFocus("subject_id");
       return;
     }
-    const task = await createTask(userId, { ...values, subject_id: targetSubjectId });
+    let taskId: string;
+    if (isEdit && task) {
+      await updateTask(task.id, {
+        title: values.title,
+        description: values.description ?? null,
+        task_type: values.task_type,
+        priority: values.priority,
+        deadline: values.deadline ?? null,
+        marks: values.marks ?? null,
+        subject_id: targetSubjectId,
+      });
+      taskId = task.id;
+
+      // Notes that were attached and are now unticked: detach them (the
+      // note/file itself stays in the subject -- only the task link goes).
+      // A text-only note was attached as a link entry owned by this task,
+      // so that entry is deleted instead.
+      for (const r of initialAttachments) {
+        const opt =
+          noteOptions.find((o) => o.resourceId === r.id) ??
+          noteOptions.find((o) => o.lectureId && r.url === `/notes/lecture/${o.lectureId}`);
+        if (opt && !selectedNoteKeys.includes(opt.key)) {
+          if (opt.lectureId) await deleteResource(r.id).catch(() => undefined);
+          else await linkResourceToTask(r.id, null).catch(() => undefined);
+        }
+      }
+      // Task-only attachments the user removed with the chip's x: detach
+      // when the file also lives in a subject/note, delete when the task
+      // was its only home.
+      for (const r of initialAttachments) {
+        if (!removeAttachmentIds.includes(r.id)) continue;
+        if (r.lecture_id || r.subject_id) await linkResourceToTask(r.id, null).catch(() => undefined);
+        else await deleteResource(r.id).catch(() => undefined);
+      }
+    } else {
+      const created = await createTask(userId, { ...values, subject_id: targetSubjectId });
+      taskId = created.id;
+    }
+
     // Attach the preparation notes: link the ticked existing notes to this
     // task (they stay in the subject too), and create + queue uploads for
     // the newly staged files. A single bad file must never lose the task.
     // A ticked text-only note has no file to link, so the task gets a link
-    // entry that opens the note itself.
+    // entry that opens the note itself. In edit mode, notes that are
+    // already attached are skipped.
     for (const opt of noteOptions.filter((o) => selectedNoteKeys.includes(o.key))) {
+      const alreadyAttached = opt.resourceId
+        ? initialAttachments.some((r) => r.id === opt.resourceId)
+        : opt.lectureId
+          ? initialAttachments.some((r) => r.url === `/notes/lecture/${opt.lectureId}`)
+          : false;
+      if (alreadyAttached) continue;
       if (opt.resourceId) {
-        await linkResourceToTask(opt.resourceId, task.id).catch(() => undefined);
+        await linkResourceToTask(opt.resourceId, taskId).catch(() => undefined);
       } else if (opt.lectureId) {
         await createResource(userId, {
-          task_id: task.id,
+          task_id: taskId,
           title: opt.title,
           url: `/notes/lecture/${opt.lectureId}`,
           resource_type: "link",
@@ -514,7 +635,7 @@ export function TaskForm({
       try {
         const resource = await createResource(userId, {
           subject_id: targetSubjectId,
-          task_id: task.id,
+          task_id: taskId,
           title: file.name,
           resource_type: inferResourceType(file.name),
         });
@@ -526,8 +647,8 @@ export function TaskForm({
     setSelectedNoteKeys([]);
     setStagedFiles([]);
     setFileError(null);
-    reset({ task_type: "assignment", priority: "medium", subject_id: "", deadline: "" });
-    onCreated?.();
+    if (!isEdit) reset({ task_type: "assignment", priority: "medium", subject_id: "", deadline: "" });
+    (onSaved ?? onCreated)?.();
   };
 
   return (
@@ -537,11 +658,13 @@ export function TaskForm({
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
           <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-brand-600 dark:text-brand-400">
-            New task
+            {isEdit ? "Edit task" : "New task"}
           </span>
         </div>
         <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-          Add an assignment, quiz, project, or other academic task to keep your schedule organized.
+          {isEdit
+            ? "Update this task — change its details, deadline, or the notes attached to it."
+            : "Add an assignment, quiz, project, or other academic task to keep your schedule organized."}
         </p>
       </div>
 
@@ -707,6 +830,43 @@ export function TaskForm({
                 <p className="text-xs text-slate-400 dark:text-slate-500">No notes for this subject yet — upload the first one below.</p>
               )}
 
+              {otherAttachments.length > 0 && (
+                <div className="mt-3">
+                  <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Also attached to this task</p>
+                  <ul className="space-y-1">
+                    {otherAttachments.map((r) => {
+                      const removing = removeAttachmentIds.includes(r.id);
+                      return (
+                        <li
+                          key={r.id}
+                          className={`flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 dark:bg-white/[0.04] dark:text-slate-300 ${removing ? "opacity-50" : ""}`}
+                        >
+                          <span className={`min-w-0 flex-1 truncate ${removing ? "line-through" : ""}`}>{r.title}</span>
+                          <span className="shrink-0 rounded-full bg-slate-200/70 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-white/[0.07] dark:text-slate-400">
+                            {r.resource_type === "link" ? "Link" : "File"}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label={removing ? `Keep ${r.title}` : `Remove ${r.title} from this task`}
+                            onClick={() =>
+                              setRemoveAttachmentIds((prev) => (removing ? prev.filter((x) => x !== r.id) : [...prev, r.id]))
+                            }
+                            className="shrink-0 font-semibold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                          >
+                            {removing ? "Undo" : "✕"}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {removeAttachmentIds.length > 0 && (
+                    <p className="mt-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                      Marked files will be removed from this task when you save.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-3">
                 <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => stageFiles(e.target.files)} />
                 <button
@@ -737,7 +897,9 @@ export function TaskForm({
                 {fileError && <p className={errorClass}>{fileError}</p>}
                 {(selectedNoteKeys.length > 0 || stagedFiles.length > 0) && (
                   <p className="mt-2 text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                    {selectedNoteKeys.length + stagedFiles.length} note{selectedNoteKeys.length + stagedFiles.length === 1 ? "" : "s"} will be attached to this task.
+                    {isEdit
+                      ? `${selectedNoteKeys.length + stagedFiles.length} note${selectedNoteKeys.length + stagedFiles.length === 1 ? "" : "s"} selected — unticked notes are detached when you save.`
+                      : `${selectedNoteKeys.length + stagedFiles.length} note${selectedNoteKeys.length + stagedFiles.length === 1 ? "" : "s"} will be attached to this task.`}
                   </p>
                 )}
               </div>
@@ -782,8 +944,10 @@ export function TaskForm({
           {isSubmitting ? (
             <>
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Adding task...
+              {isEdit ? "Saving..." : "Adding task..."}
             </>
+          ) : isEdit ? (
+            <span>Save changes</span>
           ) : (
             <>
               <span className="text-base leading-none transition-transform duration-200 group-hover:rotate-90">+</span>

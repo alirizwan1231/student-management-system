@@ -17,6 +17,7 @@ import { ResourceForm } from "@/components/resources/ResourceForm";
 import { ResourceList } from "@/components/resources/ResourceList";
 import type { AcademicTask } from "@/types/academic";
 import { ShareToGroupModal } from "@/components/groups/ShareToGroupModal";
+import { EditTaskModal } from "@/components/tasks/EditTaskModal";
 import { buildTaskSnapshot } from "@/lib/groups/snapshot";
 import { Select } from "@/components/ui/Select";
 
@@ -122,6 +123,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               <option value="in_progress">In progress</option>
               <option value="completed">Completed</option>
             </Select>
+            {user && <EditTaskModal userId={user.id} taskId={task.id} />}
             <button
               onClick={() => setShareOpen(true)}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-200"

@@ -7,6 +7,8 @@ import Link from "next/link";
 import { setTaskStatus, deleteTask } from "@/lib/db/repo/tasks";
 import { TaskStatusBadge } from "./TaskStatusBadge";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
+import { EditTaskModal } from "./EditTaskModal";
+import { useUser } from "@/hooks/useUser";
 
 function isOverdue(deadline?: string | null) {
   if (!deadline) return false;
@@ -136,6 +138,8 @@ export function TaskList({
   tasks: Task[];
   onChanged?: () => void;
 }) {
+  const { user } = useUser();
+
   if (!tasks.length) {
     return (
       <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 text-center dark:border-white/[0.08] dark:bg-white/[0.02]">
@@ -288,13 +292,16 @@ export function TaskList({
                   </span>
                 </div>
 
-                <StatusDropdown
-                  value={task.status}
-                  onChange={async (status) => {
-                    await setTaskStatus(task.id, status as TaskStatus);
-                    onChanged?.();
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  {user && <EditTaskModal userId={user.id} taskId={task.id} variant="chip" />}
+                  <StatusDropdown
+                    value={task.status}
+                    onChange={async (status) => {
+                      await setTaskStatus(task.id, status as TaskStatus);
+                      onChanged?.();
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
