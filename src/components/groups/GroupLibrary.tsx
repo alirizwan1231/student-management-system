@@ -39,7 +39,7 @@ function ItemCard({ item, groupId }: { item: GroupSharedItem; groupId: string })
           {snap.subject_name && <p className="text-xs text-slate-400 dark:text-slate-500">{snap.subject_name}</p>}
           <Attribution prefix="Shared by" name={item.profiles?.full_name} avatarUrl={item.profiles?.avatar_url} userId={item.shared_by} date={item.created_at} className="mt-1" />
           {snap.short_summary && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{snap.short_summary}</p>}
-          {snap.deadline && <p className="mt-1 text-xs text-slate-400">Due {new Date(snap.deadline).toLocaleString()}</p>}
+          {snap.deadline && <p className="mt-1 text-xs text-slate-400">Due {new Date(snap.deadline).toLocaleString(undefined, { hour12: true })}</p>}
         </div>
         <div className="flex shrink-0 flex-col gap-1 text-right">
           {item.source_type === "resource" && snap.storage_path && (

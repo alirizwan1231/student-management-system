@@ -108,7 +108,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   )}
                 </span>
               )}
-              {task.deadline && <span>Due {new Date(task.deadline).toLocaleString()}</span>}
+              {task.deadline && <span>Due {new Date(task.deadline).toLocaleString(undefined, { hour12: true })}</span>}
               {task.marks != null && <span>{task.marks} marks</span>}
             </p>
           </div>

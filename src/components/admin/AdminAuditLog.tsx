@@ -29,7 +29,7 @@ export function AdminAuditLog() {
           <li key={e.id} className="rounded-xl border border-slate-200/80 bg-white p-3.5 text-sm dark:border-white/[0.07] dark:bg-white/[0.025]">
             <p className="font-semibold text-slate-800 dark:text-slate-100">{e.action}</p>
             <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-              {new Date(e.created_at).toLocaleString()}
+              {new Date(e.created_at).toLocaleString(undefined, { hour12: true })}
               {e.target_user_id && ` • target user ${e.target_user_id}`}
             </p>
             {e.metadata && (

@@ -264,7 +264,17 @@ function CustomDateTimePicker({ value, onChange }: { value?: string; onChange: (
   };
 
   const displayValue = value ? format(new Date(value), "MMM d, yyyy • h:mm a") : "Select date & time";
-  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+  // The picker works in 12-hour AM/PM like the rest of the app; the stored
+  // value keeps the 24-hour "HH" form internally.
+  const hourNum = Number(hour) || 0;
+  const period = hourNum >= 12 ? "PM" : "AM";
+  const hour12 = String(hourNum % 12 === 0 ? 12 : hourNum % 12);
+  const hours12 = Array.from({ length: 12 }, (_, i) => String(i + 1));
+  const toHH = (h12: string, p: string) => {
+    let h = Number(h12) % 12;
+    if (p === "PM") h += 12;
+    return String(h).padStart(2, "0");
+  };
   const minutes = ["00", "15", "30", "45"];
 
   return (
@@ -372,17 +382,18 @@ function CustomDateTimePicker({ value, onChange }: { value?: string; onChange: (
             <div className="mb-2.5 flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Time</span>
               <span className="text-xs font-semibold tabular-nums text-slate-500 dark:text-slate-400">
-                {hour}:{minute}
+                {hour12}:{minute} {period}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <CompactSelect
-                value={hour}
-                onChange={(h) => {
+                value={hour12}
+                onChange={(h12) => {
+                  const h = toHH(h12, period);
                   setHour(h);
                   push(selectedDate, h, minute);
                 }}
-                options={hours}
+                options={hours12}
               />
               <CompactSelect
                 value={minute}
@@ -391,6 +402,15 @@ function CustomDateTimePicker({ value, onChange }: { value?: string; onChange: (
                   push(selectedDate, hour, m);
                 }}
                 options={minutes}
+              />
+              <CompactSelect
+                value={period}
+                onChange={(p) => {
+                  const h = toHH(hour12, p);
+                  setHour(h);
+                  push(selectedDate, h, minute);
+                }}
+                options={["AM", "PM"]}
               />
             </div>
           </div>

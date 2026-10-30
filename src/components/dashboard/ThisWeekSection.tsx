@@ -55,6 +55,7 @@ export function ThisWeekSection({ tasks }: { tasks: AcademicTask[] }) {
                       day: "numeric",
                       hour: "numeric",
                       minute: "2-digit",
+                      hour12: true,
                     })}
                   </p>
                 )}

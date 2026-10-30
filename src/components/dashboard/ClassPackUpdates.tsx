@@ -20,7 +20,7 @@ interface PackState {
   error: string | null;
 }
 
-const pendingOf = (s: PackState) => s.diff.newCount + s.diff.changedCount;
+const pendingOf = (s: PackState) => s.diff.newCount + s.diff.changedCount + s.diff.removedCount;
 
 function summarise(report: ImportReport): string {
   const added =
@@ -29,6 +29,7 @@ function summarise(report: ImportReport): string {
   const parts: string[] = [];
   if (added > 0) parts.push(`${added} new item${added === 1 ? "" : "s"} added`);
   if (report.itemsUpdated > 0) parts.push(`${report.itemsUpdated} updated`);
+  if (report.removed.length > 0) parts.push(`${report.removed.length} removed (no longer in the pack)`);
   if (parts.length === 0 && report.conflicts.length === 0) parts.push("Already up to date");
   let text = parts.join(" · ") + ".";
   if (report.conflicts.length > 0) {
@@ -182,6 +183,8 @@ export function ClassPackUpdates({ userId }: { userId: string }) {
                     {s.diff.newCount > 0 && <span className="font-bold text-brand-600 dark:text-brand-400">{s.diff.newCount} new</span>}
                     {s.diff.newCount > 0 && s.diff.changedCount > 0 && " · "}
                     {s.diff.changedCount > 0 && <span className="font-bold text-amber-600 dark:text-amber-400">{s.diff.changedCount} updated</span>}
+                    {(s.diff.newCount > 0 || s.diff.changedCount > 0) && s.diff.removedCount > 0 && " · "}
+                    {s.diff.removedCount > 0 && <span className="font-bold text-rose-600 dark:text-rose-400">{s.diff.removedCount} to remove</span>}
                     {pending === 0 && s.importedVersion === 0 && "Ready to import"}
                   </p>
                 )}

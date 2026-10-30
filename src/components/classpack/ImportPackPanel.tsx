@@ -155,6 +155,12 @@ export function ImportPackPanel({ userId, pack, links, diff, onImported }: { use
             Notes: {part(report.notesAdded, report.notesExisting)}{report.filesAdded ? ` (${report.filesAdded} files)` : ""}. Tasks: {part(report.tasksAdded, report.tasksExisting)}. Exams: {part(report.examsAdded, report.examsExisting)}.
           </p>
           {(report.itemsUpdated > 0 || report.unchanged > 0) && <p>Updated: {report.itemsUpdated}. Unchanged (skipped): {report.unchanged}.</p>}
+          {report.removed.length > 0 && (
+            <p className="mt-1 font-semibold">
+              Removed (the publisher took {report.removed.length === 1 ? "this" : "these"} out of the pack): {report.removed.slice(0, 6).join(", ")}{report.removed.length > 6 ? ` and ${report.removed.length - 6} more` : ""}.
+            </p>
+          )}
+          {report.filesRemoved > 0 && <p>Files removed: {report.filesRemoved}.</p>}
           {report.conflicts.length > 0 && (
             <p className="mt-1 font-semibold text-amber-800 dark:text-amber-200">
               Kept your own version of: {report.conflicts.slice(0, 6).join(", ")}{report.conflicts.length > 6 ? ` and ${report.conflicts.length - 6} more` : ""}.

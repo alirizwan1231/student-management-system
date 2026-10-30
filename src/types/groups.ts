@@ -18,6 +18,7 @@ export interface GroupMember {
   group_id: string;
   user_id: string;
   role: GroupRole;
+  role_label?: string | null; // custom tag chosen by the owner at promote time (migration 029), e.g. "CR" / "GR"
   joined_at: string;
   profiles?: { full_name: string | null; email: string | null; avatar_url?: string | null };
 }

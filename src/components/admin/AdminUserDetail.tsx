@@ -78,7 +78,7 @@ export function AdminUserDetail({ userId, currentAdminId }: { userId: string; cu
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{profile.email}</p>
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
             Joined {new Date(profile.created_at).toLocaleDateString()}
-            {lastSignInAt && ` • Last sign-in ${new Date(lastSignInAt).toLocaleString()}`}
+            {lastSignInAt && ` • Last sign-in ${new Date(lastSignInAt).toLocaleString(undefined, { hour12: true })}`}
           </p>
         </div>
         <AdminRoleControl
@@ -142,7 +142,7 @@ export function AdminUserDetail({ userId, currentAdminId }: { userId: string; cu
                 </p>
                 {row.short_summary && <p className="truncate text-xs text-slate-400 dark:text-slate-500">{row.short_summary}</p>}
                 {row.status && <p className="text-xs text-slate-400 dark:text-slate-500">Status: {row.status}</p>}
-                {row.deadline && <p className="text-xs text-slate-400 dark:text-slate-500">Due {new Date(row.deadline).toLocaleString()}</p>}
+                {row.deadline && <p className="text-xs text-slate-400 dark:text-slate-500">Due {new Date(row.deadline).toLocaleString(undefined, { hour12: true })}</p>}
               </div>
               <div className="flex shrink-0 gap-2">
                 {tab === "resources" ? (

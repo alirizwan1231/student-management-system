@@ -3,9 +3,9 @@ import { createSemester } from "@/lib/db/repo/semesters";
 import { createSubject, updateSubject } from "@/lib/db/repo/subjects";
 import { createTimetableSlot } from "@/lib/db/repo/timetable";
 import { findOrCreateLecturer } from "@/lib/db/repo/lecturers";
-import { createLecture, updateLecture } from "@/lib/db/repo/lectures";
-import { createTask, updateTask } from "@/lib/db/repo/tasks";
-import { createExam, updateExam } from "@/lib/db/repo/exams";
+import { createLecture, updateLecture, deleteLecture } from "@/lib/db/repo/lectures";
+import { createTask, updateTask, deleteTask } from "@/lib/db/repo/tasks";
+import { createExam, updateExam, deleteExam } from "@/lib/db/repo/exams";
 import { attachStoragePath, createResource, deleteResource } from "@/lib/db/repo/resources";
 import { exactSubjectMatch } from "@/lib/classpack/match";
 import { examCore, fp, noteCore, packHash, subjectCore, taskCore } from "@/lib/classpack/fingerprint";
@@ -16,7 +16,27 @@ const norm = (s: string | null | undefined) => (s ?? "").trim().toLowerCase();
 const slotKey = (day: number, start: string, end: string) => `${day}|${start.slice(0, 5)}|${end.slice(0, 5)}`;
 const dayOf = (iso: string | null) => (iso && !Number.isNaN(new Date(iso).getTime()) ? new Date(iso).toISOString().slice(0, 10) : "");
 
-async function attachFiles(userId: string, groupId: string, subjectId: string, lectureId: string, files: PackFile[]): Promise<number> {
+// Deletes pack-copied files (this group's copies) whose parent is being
+// removed, or that the publisher has taken out of the pack. The student's
+// own uploads and web links are never touched.
+async function prunePackResources(userId: string, groupId: string, parent: { lectureId?: string; taskId?: string }): Promise<number> {
+  const rows = await db.resources
+    .where({ user_id: userId })
+    .filter((r) => r.deleted_at === null && (parent.lectureId ? r.lecture_id === parent.lectureId : r.task_id === parent.taskId))
+    .toArray();
+  let removed = 0;
+  for (const r of rows) {
+    const isPackCopy = Boolean(r.storage_path?.startsWith(`pack:${groupId}:`));
+    const isNoteLink = parent.taskId !== undefined && r.resource_type === "link" && Boolean(r.url?.startsWith("/notes/lecture/"));
+    if (isPackCopy || isNoteLink) {
+      await deleteResource(r.id).catch(() => undefined);
+      removed += 1;
+    }
+  }
+  return removed;
+}
+
+async function attachFiles(userId: string, groupId: string, subjectId: string, lectureId: string, files: PackFile[]): Promise<{ added: number; pruned: number }> {
   const have = await db.resources.where({ user_id: userId }).filter((r) => r.deleted_at === null && r.lecture_id === lectureId).toArray();
   const titles = new Set(have.map((r) => norm(r.title)));
   let added = 0;
@@ -27,7 +47,17 @@ async function attachFiles(userId: string, groupId: string, subjectId: string, l
     titles.add(norm(f.title));
     added += 1;
   }
-  return added;
+  // Files the publisher removed from this note since the last import go
+  // away here too (only this group's pack copies -- see prunePackResources).
+  const packTitles = new Set(files.map((f) => norm(f.title)));
+  let pruned = 0;
+  for (const r of have) {
+    if (r.storage_path?.startsWith(`pack:${groupId}:`) && !packTitles.has(norm(r.title))) {
+      await deleteResource(r.id).catch(() => undefined);
+      pruned += 1;
+    }
+  }
+  return { added, pruned };
 }
 
 // Same as attachFiles, but for a task's own notes/attachments: the imported
@@ -37,7 +67,7 @@ async function attachFiles(userId: string, groupId: string, subjectId: string, l
 // THIS account's imported copy of that note -- the publisher's internal
 // note URL would point at a note that does not exist here. Notes are
 // imported before tasks, so their links are already known at this point.
-async function attachTaskFiles(userId: string, groupId: string, subjectId: string, taskId: string, files: PackFile[], links: PackLinks): Promise<number> {
+async function attachTaskFiles(userId: string, groupId: string, subjectId: string, taskId: string, files: PackFile[], links: PackLinks): Promise<{ added: number; pruned: number }> {
   const have = await db.resources.where({ user_id: userId }).filter((r) => r.deleted_at === null && r.task_id === taskId).toArray();
   const titles = new Set(have.map((r) => norm(r.title)));
   let added = 0;
@@ -69,7 +99,33 @@ async function attachTaskFiles(userId: string, groupId: string, subjectId: strin
     titles.add(norm(f.title));
     added += 1;
   }
-  return added;
+  // Attachments the publisher removed from this task since the last
+  // import go away here too: this group's pack copies whose title is no
+  // longer in the pack, and note-links pointing at imported notes the
+  // pack no longer attaches to this task. The student's own uploads and
+  // links are never touched.
+  const packTitles = new Set(files.map((f) => norm(f.title)));
+  const wantedNoteUrls = new Set(
+    files
+      .filter((f) => f.note_key && links.items[f.note_key]?.kind === "note")
+      .map((f) => `/notes/lecture/${links.items[f.note_key!].localId}`)
+  );
+  const importedNoteUrls = new Set(
+    Object.values(links.items)
+      .filter((l) => l.kind === "note")
+      .map((l) => `/notes/lecture/${l.localId}`)
+  );
+  let pruned = 0;
+  for (const r of have) {
+    if (r.storage_path?.startsWith(`pack:${groupId}:`) && !packTitles.has(norm(r.title))) {
+      await deleteResource(r.id).catch(() => undefined);
+      pruned += 1;
+    } else if (r.resource_type === "link" && r.url && importedNoteUrls.has(r.url) && !wantedNoteUrls.has(r.url) && !packTitles.has(norm(r.title))) {
+      await deleteResource(r.id).catch(() => undefined);
+      pruned += 1;
+    }
+  }
+  return { added, pruned };
 }
 
 // Copies the ticked items into the student's OWN account (normal repo functions, so everything syncs).
@@ -96,8 +152,19 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
     itemsUpdated: 0,
     unchanged: 0,
     conflicts: [],
+    removed: [],
+    filesRemoved: 0,
   };
   const links: PackLinks = (await readLinks(groupId)) ?? { version: 0, items: {} };
+  // For the removal pass at the end: which pack items this run actually
+  // covers (present), and which subjects had each category switched on
+  // (scope). Items outside the scope -- a category the student unticked in
+  // the import panel, or a subject that is not part of this run -- are
+  // never treated as removed.
+  const present = new Set<string>();
+  const scopeNotes = new Set<string>();
+  const scopeTasks = new Set<string>();
+  const scopeExams = new Set<string>();
 
   // 1. semester
   let semesterId: string;
@@ -119,6 +186,10 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
   for (const item of payload.subjects) {
     const choice = selection[item.key];
     if (!choice?.subject) continue;
+    present.add(item.key);
+    if (choice.notes) scopeNotes.add(item.key);
+    if (choice.tasks) scopeTasks.add(item.key);
+    if (choice.exams) scopeExams.add(item.key);
 
     // 2. instructor (matched by name, created only if missing)
     let lecturerId: string | null = null;
@@ -203,6 +274,7 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
     if (choice.notes && (item.notes?.length ?? 0) > 0) {
       const have = await db.lectures.where({ user_id: userId }).filter((l) => l.deleted_at === null && l.subject_id === subjectId).toArray();
       for (const note of item.notes ?? []) {
+        present.add(note.key);
         const hash = packHash.note(note);
         const link = links.items[note.key];
         let lec = link?.kind === "note" ? await db.lectures.get(link.localId) : undefined;
@@ -227,7 +299,9 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
               detailed_notes: note.detailed_notes,
               keywords: note.keywords,
             });
-            report.filesAdded += await attachFiles(userId, groupId, subjectId, lectureId, note.files);
+            const att = await attachFiles(userId, groupId, subjectId, lectureId, note.files);
+            report.filesAdded += att.added;
+            report.filesRemoved += att.pruned;
             report.itemsUpdated += 1;
           } else {
             report.notesExisting += 1;
@@ -245,7 +319,9 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
           lectureId = created.id;
           have.push(created);
           report.notesAdded += 1;
-          report.filesAdded += await attachFiles(userId, groupId, subjectId, lectureId, note.files);
+          const att = await attachFiles(userId, groupId, subjectId, lectureId, note.files);
+            report.filesAdded += att.added;
+            report.filesRemoved += att.pruned;
         }
         const fresh = await db.lectures.get(lectureId);
         if (fresh) links.items[note.key] = { kind: "note", localId: lectureId, packHash: hash, localFp: fp(noteCore(fresh)) };
@@ -256,6 +332,7 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
     if (choice.tasks && (item.tasks?.length ?? 0) > 0) {
       const have = await db.tasks.where({ user_id: userId }).filter((t) => t.deleted_at === null && t.subject_id === subjectId).toArray();
       for (const t of item.tasks ?? []) {
+        present.add(t.key);
         const hash = packHash.task(t);
         const link = links.items[t.key];
         let task = link?.kind === "task" ? await db.tasks.get(link.localId) : undefined;
@@ -277,7 +354,9 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
             // branch also means "files may have changed": (re)attach any
             // that are missing -- this is what repairs tasks imported by
             // older versions, whose attachments never made it across.
-            report.filesAdded += await attachTaskFiles(userId, groupId, subjectId, task.id, t.files ?? [], links);
+            const att = await attachTaskFiles(userId, groupId, subjectId, task.id, t.files ?? [], links);
+            report.filesAdded += att.added;
+            report.filesRemoved += att.pruned;
             report.itemsUpdated += 1;
           } else {
             report.tasksExisting += 1;
@@ -288,7 +367,11 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
             created?.id ??
             (await db.tasks.where({ user_id: userId }).filter((x) => x.deleted_at === null && x.subject_id === subjectId && norm(x.title) === norm(t.title)).last())?.id;
           report.tasksAdded += 1;
-          if (taskId) report.filesAdded += await attachTaskFiles(userId, groupId, subjectId, taskId, t.files ?? [], links);
+          if (taskId) {
+            const att = await attachTaskFiles(userId, groupId, subjectId, taskId, t.files ?? [], links);
+            report.filesAdded += att.added;
+            report.filesRemoved += att.pruned;
+          }
         }
         const fresh = taskId ? await db.tasks.get(taskId) : undefined;
         if (fresh) {
@@ -302,6 +385,7 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
     if (choice.exams && (item.exams?.length ?? 0) > 0) {
       const have = await db.exams.where({ user_id: userId }).filter((e) => e.deleted_at === null && e.subject_id === subjectId).toArray();
       for (const e of item.exams ?? []) {
+        present.add(e.key);
         const hash = packHash.exam(e);
         const link = links.items[e.key];
         let exam = link?.kind === "exam" ? await db.exams.get(link.localId) : undefined;
@@ -344,6 +428,72 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
           links.items[e.key] = { kind: "exam", localId: examId, packHash: hash, localFp: fp(examCore(fresh)) };
         }
       }
+    }
+  }
+
+  // 8. removals: items that were imported from this pack before but are no
+  // longer in it -- the publisher deselected or deleted them, so they come
+  // out here too, as the publisher expects. Safety rules, in order:
+  //  - only notes/tasks/exams (whole subjects are never auto-deleted),
+  //  - only when this run actually covered that item's subject + category,
+  //  - only when the student has NOT edited their copy since importing it
+  //    (fingerprint check). An edited copy is kept and simply unlinked, so
+  //    it becomes fully the student's own and is never managed again.
+  const subjectKeyByLocalId = new Map<string, string>();
+  for (const [k, v] of Object.entries(links.items)) if (v.kind === "subject") subjectKeyByLocalId.set(v.localId, k);
+  for (const [key, link] of Object.entries({ ...links.items })) {
+    if (link.kind === "subject" || present.has(key)) continue;
+    const scope = link.kind === "note" ? scopeNotes : link.kind === "task" ? scopeTasks : scopeExams;
+    if (link.kind === "note") {
+      const local = await db.lectures.get(link.localId);
+      if (!local || local.deleted_at) {
+        delete links.items[key];
+        continue;
+      }
+      const subjectKey = subjectKeyByLocalId.get(local.subject_id);
+      if (!subjectKey || !scope.has(subjectKey)) continue; // not covered by this import: leave it alone
+      if (fp(noteCore(local)) !== link.localFp) {
+        report.conflicts.push(local.title); // the student edited it: keep their copy
+        delete links.items[key];
+        continue;
+      }
+      await deleteLecture(local.id);
+      report.filesRemoved += await prunePackResources(userId, groupId, { lectureId: local.id });
+      report.removed.push(local.title);
+      delete links.items[key];
+    } else if (link.kind === "task") {
+      const local = await db.tasks.get(link.localId);
+      if (!local || local.deleted_at) {
+        delete links.items[key];
+        continue;
+      }
+      const subjectKey = subjectKeyByLocalId.get(local.subject_id);
+      if (!subjectKey || !scope.has(subjectKey)) continue;
+      if (fp(taskCore(local)) !== link.localFp) {
+        report.conflicts.push(local.title);
+        delete links.items[key];
+        continue;
+      }
+      await deleteTask(local.id);
+      report.filesRemoved += await prunePackResources(userId, groupId, { taskId: local.id });
+      report.removed.push(local.title);
+      delete links.items[key];
+    } else {
+      const local = await db.exams.get(link.localId);
+      if (!local || local.deleted_at) {
+        delete links.items[key];
+        continue;
+      }
+      const subjectKey = subjectKeyByLocalId.get(local.subject_id);
+      if (!subjectKey || !scope.has(subjectKey)) continue;
+      if (fp(examCore(local)) !== link.localFp) {
+        report.conflicts.push(local.title);
+        delete links.items[key];
+        continue;
+      }
+      await deleteExam(local.id);
+      report.removed.push(local.title);
+      delete links.items[key];
     }
   }
 

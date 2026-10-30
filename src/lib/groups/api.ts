@@ -14,7 +14,15 @@ export function groupRoleLabel(role: string): string {
   if (role === "moderator") return "Moderator";
   return "Member";
 }
-async function listMyGroups_online(): Promise<(Group & { member_count: number; role: string })[]> {
+
+// The full role text for a member, including their custom tag when the
+// owner gave one at promote time ("Moderator (GR)"). "CR" is the default
+// tag for a moderator without a custom one.
+export function memberRoleText(role: string, roleLabel?: string | null): string {
+  if (role === "moderator") return `Moderator (${roleLabel?.trim() || "CR"})`;
+  return groupRoleLabel(role);
+}
+async function listMyGroups_online(): Promise<(Group & { member_count: number; role: string; role_label?: string | null })[]> {
   const supabase = createClient();
   const { data: memberships, error } = await supabase.from("group_members").select("group_id, role");
   if (error) throw error;
@@ -28,6 +36,12 @@ async function listMyGroups_online(): Promise<(Group & { member_count: number; r
   const counts = new Map<string, number>();
   for (const m of allMembers ?? []) counts.set(m.group_id, (counts.get(m.group_id) ?? 0) + 1);
   const roleByGroup = new Map((memberships ?? []).map((m) => [m.group_id, m.role]));
+  // Custom promote tags (migration 029). Read separately and tolerantly:
+  // before the migration runs this query just returns an error and every
+  // label stays empty, instead of breaking the whole groups list.
+  const labelByGroup = new Map<string, string | null>();
+  const { data: labelRows } = await supabase.from("group_members").select("group_id, role_label").in("group_id", groupIds);
+  for (const r of labelRows ?? []) labelByGroup.set(r.group_id, (r as { role_label?: string | null }).role_label ?? null);
   const { data: sessionData } = await supabase.auth.getSession();
   const myId = sessionData.session?.user?.id;
   return (groups ?? []).map((g) => ({
@@ -36,6 +50,7 @@ async function listMyGroups_online(): Promise<(Group & { member_count: number; r
     // The creator is ALWAYS the owner/Admin, even if an old membership row
     // somehow carries a different role -- owner_id is the source of truth.
     role: myId && g.owner_id === myId ? "owner" : roleByGroup.get(g.id) ?? "member",
+    role_label: labelByGroup.get(g.id) ?? null,
   }));
 }
 export async function createGroup(input: { name: string; description?: string; subject_id?: string | null; semester_id?: string | null }) {
@@ -89,10 +104,21 @@ export async function removeMember(groupId: string, targetUserId: string) {
   const { error } = await supabase.rpc("remove_group_member", { p_group_id: groupId, p_target_user_id: targetUserId });
   if (error) throw error;
 }
-export async function setMemberRole(groupId: string, targetUserId: string, role: "moderator" | "member") {
+export async function setMemberRole(groupId: string, targetUserId: string, role: "moderator" | "member", label?: string | null) {
   const supabase = createClient();
-  const { error } = await supabase.rpc("set_group_member_role", { p_group_id: groupId, p_target_user_id: targetUserId, p_new_role: role });
-  if (error) throw error;
+  // Migration 029's RPC also stores the owner's custom tag for the member
+  // (CR, GR, anything). Until that migration has run, fall back to the
+  // original role-only RPC so promoting keeps working.
+  const { error } = await supabase.rpc("set_group_member_role_label", {
+    p_group_id: groupId,
+    p_target_user_id: targetUserId,
+    p_new_role: role,
+    p_label: label ?? null,
+  });
+  if (error) {
+    const { error: fallbackError } = await supabase.rpc("set_group_member_role", { p_group_id: groupId, p_target_user_id: targetUserId, p_new_role: role });
+    if (fallbackError) throw fallbackError;
+  }
 }
 export async function regenerateInviteCode(groupId: string) {
   const supabase = createClient();

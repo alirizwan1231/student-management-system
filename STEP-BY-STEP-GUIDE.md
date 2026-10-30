@@ -443,3 +443,33 @@ notes could still fail to arrive in other accounts are fixed here:
 Still true by design: a file that is still uploading when the pack is
 published cannot be included (the publish panel reports how many files
 were skipped) — wait for uploads to finish, then publish again.
+
+---
+
+# UPDATE — 30 Oct 2026 (v5.5): AM/PM times, custom member tags, pack removals reach everyone
+
+Code + ONE new Supabase migration (029, needs a manual run — see below).
+
+**1. Times are 12-hour AM/PM everywhere.** Stored values are unchanged
+(still 24-hour internally); only display changed: timetable slots, exam
+times, task deadlines, dashboard lists, group library, admin screens,
+settings, and the task deadline picker (hour wheel is now 1–12 with an
+AM/PM switch — it was the last 24-hour control).
+
+**2. Promoting a member asks for a tag.** Promote now opens a small
+dialog: quick picks CR / GR or any custom tag (up to 24 characters). The
+tag shows next to the member's role everywhere ("Moderator (GR)"), can be
+changed later with "Edit tag", and is cleared on demote. The role itself
+is unchanged (moderator rights, incl. Class Pack publishing). Needs
+migration 029 (`role_label` column + `set_group_member_role_label` RPC);
+until it runs, promoting still works via the old RPC, just without tags.
+
+**3. Taking something out of the pack now removes it for everyone.**
+Re-publishing already notified every member (bell: "Class pack
+updated"); when a member imports the update, notes/tasks/exams the
+publisher deselected or deleted are now removed from their account too —
+including pack files taken off a kept note/task. Safety: an item the
+student edited themselves is NEVER deleted — it is kept, listed in the
+import report, and unlinked so it becomes fully their own. Whole subjects
+are never auto-deleted, and a category the student unticked in the import
+panel is left untouched. The dashboard card now also shows "N to remove".

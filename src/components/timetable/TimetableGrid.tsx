@@ -6,6 +6,7 @@ import { useUser } from "@/hooks/useUser";
 import { useTimetableSlots } from "@/hooks/useTimetable";
 import { useAllSubjects } from "@/hooks/useSubjects";
 import { deleteTimetableSlot } from "@/lib/db/repo/timetable";
+import { formatTime12 } from "@/lib/utils/time-format";
 import { AddSlotModal } from "@/components/timetable/AddSlotModal";
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export function TimetableGrid() {
@@ -55,7 +56,7 @@ export function TimetableGrid() {
                       <Link href={subject ? `/subjects/${subject.id}` : "#"} className="font-semibold text-slate-800 dark:text-slate-100">
                         {subject?.name ?? "Subject"}
                       </Link>
-                      <p className="text-slate-500 dark:text-slate-400">{slot.start_time}–{slot.end_time}</p>
+                      <p className="text-slate-500 dark:text-slate-400">{formatTime12(slot.start_time)}–{formatTime12(slot.end_time)}</p>
                       {slot.room && <p className="text-slate-400 dark:text-slate-500">{slot.room}</p>}
                       <button
                         onClick={() => deleteTimetableSlot(slot.id)}

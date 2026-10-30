@@ -1,6 +1,7 @@
 "use client";
 
 import { DAY_NAMES, type ChoiceField, type PackSubject, type SubjectChoice } from "@/lib/classpack/types";
+import { formatTime12 } from "@/lib/utils/time-format";
 
 interface Props {
   s: PackSubject;
@@ -21,7 +22,7 @@ export function PackSubjectRow({ s, choice, onToggle, items, extra }: Props) {
     { field: "instructor", label: `Instructor: ${s.instructor ?? "none"}`, count: s.instructor ? 1 : 0 },
     {
       field: "timetable",
-      label: s.slots.length === 0 ? "Timetable: no classes" : `Timetable: ${s.slots.map((sl) => `${DAY_NAMES[sl.day_of_week]} ${sl.start_time}-${sl.end_time}${sl.room ? ` (${sl.room})` : ""}`).join(", ")}`,
+      label: s.slots.length === 0 ? "Timetable: no classes" : `Timetable: ${s.slots.map((sl) => `${DAY_NAMES[sl.day_of_week]} ${formatTime12(sl.start_time)}-${formatTime12(sl.end_time)}${sl.room ? ` (${sl.room})` : ""}`).join(", ")}`,
       count: s.slots.length,
     },
     { field: "notes", label: `Notes: ${notes.length}${fileCount ? ` (${fileCount} files)` : ""}`, count: notes.length, list: notes.map((n) => ({ key: n.key, label: n.title })) },

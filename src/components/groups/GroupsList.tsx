@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
-import { groupRoleLabel, listMyGroups } from "@/lib/groups/api";
+import { listMyGroups, memberRoleText } from "@/lib/groups/api";
 import { CreateGroupModal } from "@/components/groups/CreateGroupModal";
 import { JoinGroupModal } from "@/components/groups/JoinGroupModal";
 export function GroupsList() {
@@ -39,7 +39,7 @@ export function GroupsList() {
             <Link key={g.id} href={`/groups/${g.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:-translate-y-[2px] hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
               <h2 className="font-bold text-slate-900 dark:text-white">{g.name}</h2>
               {g.description && <p className="mt-1 line-clamp-2 text-xs text-slate-400 dark:text-slate-500">{g.description}</p>}
-              <p className="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{g.member_count} members · your role: {groupRoleLabel(g.role)}</p>
+              <p className="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{g.member_count} members · your role: {memberRoleText(g.role, g.role_label)}</p>
             </Link>
           ))}
         </div>

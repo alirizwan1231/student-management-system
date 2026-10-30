@@ -38,13 +38,16 @@ export interface PackDiff {
   status: Record<string, ItemStatus>;
   newCount: number;
   changedCount: number;
+  removedCount: number; // imported notes/tasks/exams that are no longer in the pack at all
 }
 
 export function diffPack(payload: ClassPackPayload, links: PackLinks | null): PackDiff {
   const status: Record<string, ItemStatus> = {};
   let newCount = 0;
   let changedCount = 0;
+  const present = new Set<string>();
   const check = (key: string, hash: string) => {
+    present.add(key);
     const l = links?.items[key];
     const s: ItemStatus = !l ? "new" : l.packHash === hash ? "same" : "changed";
     status[key] = s;
@@ -57,5 +60,9 @@ export function diffPack(payload: ClassPackPayload, links: PackLinks | null): Pa
     for (const t of s.tasks ?? []) check(t.key, packHash.task(t));
     for (const e of s.exams ?? []) check(e.key, packHash.exam(e));
   }
-  return { status, newCount, changedCount };
+  let removedCount = 0;
+  for (const [key, l] of Object.entries(links?.items ?? {})) {
+    if (l.kind !== "subject" && !present.has(key)) removedCount += 1;
+  }
+  return { status, newCount, changedCount, removedCount };
 }

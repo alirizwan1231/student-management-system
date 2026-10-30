@@ -127,6 +127,8 @@ export interface ImportReport {
   itemsUpdated: number; // items that changed in the pack and were updated here
   unchanged: number; // items that did not change since the last import
   conflicts: string[]; // items the student edited themselves: their version was kept
+  removed: string[]; // titles of imported items the publisher has since taken out of the pack: removed here too (edited copies are kept and appear in conflicts instead)
+  filesRemoved: number; // pack-copied files removed because the publisher removed them from a note/task
 }
 
 export interface ImportOptions {

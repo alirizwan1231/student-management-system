@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import { TimeSelect } from "@/components/ui/TimeSelect";
 import { EXAM_TYPES, type Exam, type ExamType } from "@/types/exams";
 import { cn } from "@/lib/utils/cn";
+import { formatTime12 } from "@/lib/utils/time-format";
 import { Select } from "@/components/ui/Select";
 
 const inputClass =
@@ -170,7 +171,7 @@ export function ExamsPage() {
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-slate-500 dark:text-slate-400">
           <span className="inline-flex items-center gap-1.5"><CalendarClock size={13} />{format(parseISO(exam.exam_date), "EEE, d MMM yyyy")}</span>
           {exam.start_time && (
-            <span className="inline-flex items-center gap-1.5"><Clock size={13} />{exam.start_time.slice(0, 5)}{exam.duration_minutes ? ` (${exam.duration_minutes} min)` : ""}</span>
+            <span className="inline-flex items-center gap-1.5"><Clock size={13} />{formatTime12(exam.start_time)}{exam.duration_minutes ? ` (${exam.duration_minutes} min)` : ""}</span>
           )}
           {exam.room && <span className="inline-flex items-center gap-1.5"><MapPin size={13} />{exam.room}</span>}
         </div>

@@ -40,7 +40,7 @@ export function ClassPackTab({ groupId, myRole }: { groupId: string; myRole: str
     void load();
   }, [load]);
 
-  const diff = useMemo(() => (pack ? diffPack(pack.payload, links) : { status: {}, newCount: 0, changedCount: 0 }), [pack, links]);
+  const diff = useMemo(() => (pack ? diffPack(pack.payload, links) : { status: {}, newCount: 0, changedCount: 0, removedCount: 0 }), [pack, links]);
 
   if (!user || pack === undefined) return <div className="h-40 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/[0.04]" />;
 

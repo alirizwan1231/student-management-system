@@ -123,7 +123,7 @@ export default function SettingsPage() {
               <div className="mt-4 border-t border-slate-200/70 pt-3 dark:border-white/[0.06]">
                 <p className="text-xs text-slate-400 dark:text-slate-500">Last synced</p>
                 <p className="mt-0.5 text-sm font-medium text-slate-600 dark:text-slate-300">
-                  {lastSyncedAt ? new Date(lastSyncedAt).toLocaleString() : "Never synced"}
+                  {lastSyncedAt ? new Date(lastSyncedAt).toLocaleString(undefined, { hour12: true }) : "Never synced"}
                 </p>
               </div>
             </div>
