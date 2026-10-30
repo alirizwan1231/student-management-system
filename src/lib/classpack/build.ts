@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import type { ClassPackPayload, PackSubject, Selection } from "@/lib/classpack/types";
+import type { ClassPackPayload, PackFile, PackSubject, Selection } from "@/lib/classpack/types";
+import type { Resource } from "@/types/academic";
 
 const hhmm = (t: string) => t.slice(0, 5);
 const isoOrNull = (v: string | null) => (v && !Number.isNaN(new Date(v).getTime()) ? new Date(v).toISOString() : null);
@@ -24,6 +25,17 @@ export async function buildPack(userId: string, semesterId: string): Promise<Bui
   const exams = await db.exams.where({ user_id: userId }).filter((e) => e.deleted_at === null).toArray();
 
   let skippedFiles = 0;
+  // A resource becomes a pack file when it is a web link, or when its file
+  // is fully uploaded under the publisher's own "users/" path. Anything
+  // else (still uploading, or itself an imported pack copy) is skipped.
+  const toPackFiles = (rs: Resource[]): PackFile[] =>
+    rs.flatMap((r): PackFile[] => {
+      if (r.url) return [{ title: r.title, resource_type: r.resource_type, url: r.url, pack_path: null }];
+      if (r.storage_path && r.storage_path.startsWith("users/")) return [{ title: r.title, resource_type: r.resource_type, url: null, pack_path: r.storage_path }];
+      skippedFiles += 1;
+      return [];
+    });
+
   const out: PackSubject[] = [];
   for (const s of subjects) {
     let instructor = s.lecturer_name?.trim() || null;
@@ -52,14 +64,7 @@ export async function buildPack(userId: string, semesterId: string): Promise<Bui
           short_summary: l.short_summary,
           detailed_notes: l.detailed_notes,
           keywords: l.keywords ?? [],
-          files: resources
-            .filter((r) => r.lecture_id === l.id)
-            .flatMap((r): { title: string; resource_type: typeof r.resource_type; url: string | null; pack_path: string | null }[] => {
-              if (r.url) return [{ title: r.title, resource_type: r.resource_type, url: r.url, pack_path: null }];
-              if (r.storage_path && r.storage_path.startsWith("users/")) return [{ title: r.title, resource_type: r.resource_type, url: null, pack_path: r.storage_path }];
-              skippedFiles += 1; // still uploading, or already a pack file
-              return [];
-            }),
+          files: toPackFiles(resources.filter((r) => r.lecture_id === l.id)),
         })),
       tasks: tasks
         .filter((t) => t.subject_id === s.id)
@@ -71,6 +76,10 @@ export async function buildPack(userId: string, semesterId: string): Promise<Bui
           priority: t.priority,
           deadline: isoOrNull(t.deadline),
           marks: t.marks,
+          // The task's own notes/attachments (Preparation notes, uploads) --
+          // these used to be left out of the pack entirely, so imported
+          // tasks arrived without their notes.
+          files: toPackFiles(resources.filter((r) => r.task_id === t.id)),
         })),
       exams: exams
         .filter((e) => e.subject_id === s.id)

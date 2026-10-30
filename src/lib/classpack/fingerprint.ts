@@ -54,6 +54,6 @@ const slotsSig = (slots: PackSlot[]) => JSON.stringify(slots.map((s) => `${s.day
 export const packHash = {
   subject: (s: PackSubject) => hashString(JSON.stringify([subjectCore(s), txt(s.instructor), slotsSig(s.slots)])),
   note: (n: PackNote) => hashString(JSON.stringify([noteCore(n), n.files.map((f) => `${f.title}|${f.url ?? ""}|${f.pack_path ?? ""}`)])),
-  task: (t: PackTask) => fp(taskCore(t)),
+  task: (t: PackTask) => hashString(JSON.stringify([taskCore(t), (t.files ?? []).map((f) => `${f.title}|${f.url ?? ""}|${f.pack_path ?? ""}`)])),
   exam: (e: PackExam) => fp(examCore(e)),
 };

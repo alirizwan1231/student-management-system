@@ -30,6 +30,23 @@ async function attachFiles(userId: string, groupId: string, subjectId: string, l
   return added;
 }
 
+// Same as attachFiles, but for a task's own notes/attachments: the imported
+// copies hang off the imported task (and its subject), exactly like the
+// publisher's originals.
+async function attachTaskFiles(userId: string, groupId: string, subjectId: string, taskId: string, files: PackFile[]): Promise<number> {
+  const have = await db.resources.where({ user_id: userId }).filter((r) => r.deleted_at === null && r.task_id === taskId).toArray();
+  const titles = new Set(have.map((r) => norm(r.title)));
+  let added = 0;
+  for (const f of files) {
+    if (titles.has(norm(f.title))) continue;
+    const res = await createResource(userId, { subject_id: subjectId, task_id: taskId, title: f.title, url: f.url, resource_type: f.resource_type });
+    if (!f.url && f.pack_path) await attachStoragePath(res.id, `pack:${groupId}:${f.pack_path}`);
+    titles.add(norm(f.title));
+    added += 1;
+  }
+  return added;
+}
+
 // Copies the ticked items into the student's OWN account (normal repo functions, so everything syncs).
 // Safe to run again and again:
 //  - items already imported and unchanged in the pack are skipped,
@@ -231,6 +248,11 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
             report.conflicts.push(t.title);
           } else if (taskLinked) {
             await updateTask(task.id, { title: t.title, description: t.description, task_type: t.task_type, priority: t.priority, deadline: t.deadline, marks: t.marks });
+            // The pack's hash covers the task's files, so reaching this
+            // branch also means "files may have changed": (re)attach any
+            // that are missing -- this is what repairs tasks imported by
+            // older versions, whose attachments never made it across.
+            report.filesAdded += await attachTaskFiles(userId, groupId, subjectId, task.id, t.files ?? []);
             report.itemsUpdated += 1;
           } else {
             report.tasksExisting += 1;
@@ -241,6 +263,7 @@ export async function importPack(userId: string, pack: ClassPack, selection: Sel
             created?.id ??
             (await db.tasks.where({ user_id: userId }).filter((x) => x.deleted_at === null && x.subject_id === subjectId && norm(x.title) === norm(t.title)).last())?.id;
           report.tasksAdded += 1;
+          if (taskId) report.filesAdded += await attachTaskFiles(userId, groupId, subjectId, taskId, t.files ?? []);
         }
         const fresh = taskId ? await db.tasks.get(taskId) : undefined;
         if (fresh) {

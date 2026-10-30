@@ -35,6 +35,7 @@ export interface PackTask {
   priority: AcademicTask["priority"];
   deadline: string | null; // ISO date-time
   marks: number | null;
+  files?: PackFile[]; // notes/files attached to the task (optional so packs published before this existed still import)
 }
 
 export interface PackExam {

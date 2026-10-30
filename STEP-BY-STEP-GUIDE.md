@@ -378,3 +378,24 @@ Code only — no Supabase changes.
    themselves (ticking one attaches a link that opens the note).
 2. **Task breakdown moved to the top of the dashboard**, right under the
    four stat cards; the subjects widget stays lower on the page.
+
+---
+
+# UPDATE — 30 Oct 2026 (v5.2): task notes now travel in the Class Pack
+
+Code only — no Supabase changes. Bug: tasks published in a Class Pack
+arrived in the importing account WITHOUT their attached notes/files —
+the pack format simply never carried task attachments (only lecture
+notes had files). Now:
+
+- Pack tasks carry their files (uploaded PDFs/notes and links), built
+  from the task's own resources, copied to the group's shared storage
+  on publish exactly like note files, and recreated on the imported
+  task on import (counted in the import report's files total).
+- The task fingerprint now includes its files, so a pack whose tasks
+  gained attachments counts as "updated" on the dashboard card.
+
+**To repair tasks already imported without notes:** publish the pack
+again from the original account (new version), then press "Import
+updates" in the other account — the missing attachments are added to
+the existing tasks; nothing is duplicated.
